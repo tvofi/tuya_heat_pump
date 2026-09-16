@@ -135,7 +135,16 @@ Raw DPs are opaque byte arrays, often several values packed together.
 Raw-field entries work in `SENSOR_TYPES`, `NUMBER_TYPES`, `SWITCH_TYPES` and
 `SELECT_TYPES`.
 
-## 7. Contribute it back
+## 7. Parameters that are not in the Tuya schema at all
+
+If a setting you know from the wired controller's FOR SERVICEMAN menu does
+not appear in `schema` (backup heater IBH, tank heater TBH, double zone,
+weather curves, T4 limits, …), the Tuya module simply does not expose it and
+no model file can add it. On Midea-based units these parameters are
+available on the indoor unit's Modbus port instead: see
+[modbus/README.md](modbus/README.md) for a ready-made Home Assistant package.
+
+## 8. Contribute it back
 
 Once the entries are named and verified on the device, open a pull request
 (or an issue with the diagnostics JSON attached) in the upstream repository
