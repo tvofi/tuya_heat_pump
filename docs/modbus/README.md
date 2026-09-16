@@ -18,7 +18,7 @@ The packages in this folder use only Home Assistant's built-in `modbus` and
 
 | Unit | Manufacturer / controller | Package | Status |
 |---|---|---|---|
-| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | owner-verified read-only map (38 registers) + 2 verified writable setpoints; the rest of the writable table still to be transcribed from the manual |
+| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | manual's Modbus table rows 20–159 transcribed (219 entities: every writable setpoint, curve, DHW/anti-legionella schedule, backup heater type, I/O configuration, decoded alarms); rows 1–19, 84–106, 137–138, 150–158 still to add |
 | Midea M-Thermal OEMs: **Kaisai** KHC/KMK, **Airwell** Wellea, **Ferroli** Omnia, **Inventor** Matrix, **Kaysun** Aquantia, **YORK**, Midea Arctic/Nature | Midea, wired controller H1/H2 | `midea_mthermal_r32.yaml`, `midea_mthermal_r290.yaml` | full community map, every FOR SERVICEMAN parameter writable |
 
 **Do not use the Midea packages on a Rotenso Windmi.** The Windmi's register
@@ -51,41 +51,62 @@ Heating, Ventilation & Air Conditioning; its ATW monoblock is sold as
   with `homeassistant: packages: !include_dir_named packages`), edit the
   `modbus:` block for your adapter, restart.
 
-### What the Windmi package contains
+### What the Windmi package contains (219 entities)
 
-- Temperatures (registers 1–11, 51, 4104, 4115, 4131, 4132, 4134; 0.1 °C):
-  outdoor, indoor, inlet (ETW), outlet (LWT), refrigerant, discharge, air
-  exchanger, water control point, LWT after the plate heat exchanger, IPM
-  refrigerant pipe (TL), IPM module (T9), T30 defrost calculation, target
-  discharge.
-- Status: setting mode, running mode, occupancy mode, frequency reduction
-  (night) mode, user interface type, backup heater type, warm-up time, water
-  ΔT setpoint (raw values; the enumerations are in the manual's table).
-- Compressor and hydraulics: actual/required compressor frequency, pump
-  speed, capacity demand (IDU side and after ODU rectify), actual capacity
-  output, unit capacity, fan speeds (required/actual, upper/lower motor),
-  EXV opening, AC current, water flow feedback, compressor and pump runtime.
-- Writable (verified from the manual): occupied heating air setpoint
-  (01A5H = 421, 16–32 °C) and booster delta temperature (025BH = 603,
-  1–20 °C). Both are written as temperature × 10 with function 0x06.
+Transcribed from the manual's Modbus table (rows 20–159) plus the owner
+gist for rows 1–19:
 
-### Completing the writable table
+- **Temperatures** (0.1 °C): outdoor, indoor, inlet EWT, outlet LWT,
+  refrigerant, discharge, air exchanger, DHW tank, LWT after the plate heat
+  exchanger (Tw-out), IPM refrigerant pipe, IPM module (T9), T30 defrost
+  calculation, target discharge.
+- **Compressor / hydraulics**: actual and required compressor frequency,
+  pump speed, capacity demand (IDU side, after ODU rectify) and actual
+  output, unit capacity, fan speed level and upper/lower motor rpm
+  (required and actual), EXV opening (required and actual), AC/DC current
+  and voltage, water flow, compressor and pump runtime, ODU program and
+  EEPROM version, Modbus baud/parity/ID as seen by the unit.
+- **Status**: DHW mode, DHW valve, flow switch, discrete inputs 5–8, ODU
+  output relays (fan H/L, compressor and chassis heater, PTC, SV1, SV2,
+  4-way valve), low/high pressure switches, compressor frequency limitation
+  reasons 1 and 2 (decoded), P6/IPM protection reason (decoded), the four
+  **alarm bitmaps decoded to text** (sensor fails, protections with the
+  E/P/H code from the manual) and one combined *Alarm* problem sensor.
+- **Writable setpoints** (numbers, 0.5 °C steps): water control point;
+  occupied/unoccupied/economic heating and cooling water setpoints and
+  offsets; occupied/unoccupied/economic heating and cooling air setpoints
+  and offsets; DHW normal, economic and anti-legionella setpoints; heating
+  and cooling curve setpoint offsets; custom heating and cooling curve
+  points (min/max OAT, min/max LWT); minimum OAT for heating with
+  compressor; water ΔT setpoint; warm-up time; booster delta temperature
+  and OAT threshold.
+- **Writable selections**: heating climatic curve (none / custom / 1–12),
+  cooling climatic curve (none / custom / 1–2), **backup heater type**
+  (inner EH, DHW EH, gas boiler combinations, none), control mode (water or
+  ambient temperature), function of discrete inputs 5–8 and discrete
+  outputs 5, 8, 9.
+- **Writable switches**: DHW priority, forced discrete outputs 5/8/9, and
+  the day-of-week bitmaps of the DHW and anti-legionella schedules (one
+  switch per day).
+- **Schedule times** (hour and minute numbers, plus a read-only hh:mm
+  sensor): night mode start/end, DHW schedule start/stop, anti-legionella
+  start.
 
-The manual's Modbus table (installation & user manual, pages 122–123, and
-the wired controller manual's "Modbus parameters" page) lists the writable
-parameters with function codes 0x06/0x10: operating mode (0259H, values
-0–7), warm-up time (025AH), booster OAT threshold (025CH), backup heater
-settings, water setpoints, on/off, and more. Add each verified row to
-`WRITABLE` in `tools/gen_gchv_package.py` as
-`(decimal_address, "hexH", "name (unit)", min, max, step, scale, "unit")`
-and regenerate:
+Not yet covered: rows 1–19 beyond the temperatures (the on/off and
+mode-setting registers, occupancy, night mode enable), rows 84–106 and
+137–138, 150–158 — those manual pages were not available. The registers
+41, 44, 45, 68 and 521 from the owner gist are exposed raw until their
+value tables are known.
+
+### Completing the table
+
+Add rows to the tables at the top of `tools/gen_gchv_package.py`
+(`RO_VALUES`, `RW_NUMBERS`, `RW_SELECTS`, `RW_SWITCHES`, `TIME_REGS`,
+`DAY_BITMAPS`, `RO_MAPS`, `RO_BITS`, `ALARMS`) and regenerate:
 
 ```bash
 python tools/gen_gchv_package.py > docs/modbus/rotenso_windmi_gchv.yaml
 ```
-
-If you can share those two pages (photo or text), the table can be completed
-in one pass.
 
 ## Midea M-Thermal OEMs: hardware and setup
 
