@@ -130,6 +130,9 @@ A model file only knows the data points its author labelled. Everything else you
 - Works in Cloud and Local mode. Local mode still needs the cloud credentials once to fetch the schema; it is cached in the config entry afterwards. Without any schema (e.g. no cloud), unknown local DPs are exposed read-only as `DP <id>`.
 - Curated model files always win: a discovered entity never replaces one defined in `models/`.
 - **Download diagnostics** (device page → ⋮ → *Download diagnostics*) gives you the full schema, live values, the mapping in use and the list of still-unmapped codes — attach it when requesting a model file.
+- In **Local** mode, known DPs the device leaves out of its status frame are requested explicitly every 5 minutes, so settings and counters that are normally hidden still show up.
+- Two services complete the picture: `tuya_heat_pump.write_dp` writes any DP by code or id (for registers without an entity, or ones the schema wrongly marks read-only) and `tuya_heat_pump.refresh` polls immediately.
+- Step-by-step guide to turning discovered entities into curated ones, decoding raw blobs and generating a model file from the diagnostics: 📖 **[docs/MAPPING_REGISTERS.md](https://github.com/Korkuttum/tuya_heat_pump/blob/main/docs/MAPPING_REGISTERS.md)**
 
 ---
 

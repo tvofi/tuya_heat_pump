@@ -135,13 +135,17 @@ A live-updating **GUI** for reverse-engineering `raw` type data-points — the o
 <details>
 <summary><h3>🔎 5. <code>discovery_preview.py</code></h3><sub>Shows, offline, which entities live register discovery would add for your device.</sub></summary>
 
-The integration's **live register discovery** (`custom_components/tuya_heat_pump/discovery.py`) turns every data point in a device's Tuya schema that the model file does not cover into a Home Assistant entity. This script runs that same logic against a `tuya_device_data_<timestamp>.txt` dump from `tuya_api_test.py`, so you can see the result without touching Home Assistant — handy when writing or reviewing a model file.
+The integration's **live register discovery** (`custom_components/tuya_heat_pump/discovery.py`) turns every data point in a device's Tuya schema that the model file does not cover into a Home Assistant entity. This script runs that same logic against a `tuya_device_data_<timestamp>.txt` dump from `tuya_api_test.py` **or the JSON from Home Assistant's *Download diagnostics***, so you can see the result without touching Home Assistant — handy when writing or reviewing a model file.
 
 ```bash
 python discovery_preview.py tuya_device_data_20260707_224248.txt
 # only what a given model file does NOT already cover:
 python discovery_preview.py tuya_device_data_20260707_224248.txt ../custom_components/tuya_heat_pump/models/000004k4z6.py
+# print those entries as a model-file skeleton to paste into models/<modelId>.py:
+python discovery_preview.py tuya_heat_pump-diagnostics.json ../custom_components/tuya_heat_pump/models/000004k4z6.py --emit-model > extra.py
 ```
+
+Full walkthrough: [docs/MAPPING_REGISTERS.md](https://github.com/Korkuttum/tuya_heat_pump/blob/main/docs/MAPPING_REGISTERS.md).
 
 **📋 What it prints**
 

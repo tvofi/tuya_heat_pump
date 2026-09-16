@@ -8,6 +8,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import TuyaScaleDataUpdateCoordinator
+from .services import async_setup_services, async_unload_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +65,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
+    # Generic register read/write services (tuya_heat_pump.write_dp etc.),
+    # registered once for all entries.
+    async_setup_services(hass)
+
     # MQTT (tuya_sharing) — tamamen opsiyonel, bkz. sharing_mqtt.py.
     # Kullanıcı kurulumda User Code + QR onayı yapmadıysa (mevcut tüm
     # kurulumlar dahil) coordinator._async_start_mqtt() hiçbir şey
@@ -106,5 +111,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         hass.data[DOMAIN].pop(entry.entry_id)
+        if not hass.data[DOMAIN]:
+            async_unload_services(hass)
 
     return unload_ok

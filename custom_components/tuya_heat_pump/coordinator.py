@@ -161,6 +161,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # Son gönderilen değer cache (geri alma sorunu için)
         self._sent_value_cache = {}  # code → (value, timestamp)
         self._cache_timeout = 8.0    # 8 saniye
+        # Local mode: when the schema (or model file) knows DP ids the
+        # device never included in status(), ask for them explicitly with
+        # updatedps() — but not on every poll.
+        self._last_dp_request = 0.0
+        self._DP_REQUEST_INTERVAL = 300.0
 
         self.device_info = DeviceInfo(
             identifiers={(DOMAIN, self.device_id)},
@@ -413,6 +418,31 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         ):
             self.skip_next_reload = False
 
+    async def _async_request_hidden_dps(self, data: dict) -> None:
+        """Local mode: ask the device for every known DP id (model file or
+        cloud schema) that has not shown up in any status frame yet.
+
+        Tuya devices answer status() with the DPs they consider
+        "reportable"; settings, counters and raw blobs are often left
+        out until explicitly requested. Throttled so a DP the device
+        simply does not have does not cause a request storm."""
+        if not self.local_device or not self.dp_mapping:
+            return
+        now = time.time()
+        if now - self._last_dp_request < self._DP_REQUEST_INTERVAL:
+            return
+        missing = sorted(
+            dp_id for dp_id, code in self.dp_mapping.items() if code not in (data or {})
+        )
+        if not missing:
+            return
+        self._last_dp_request = now
+        try:
+            await self.hass.async_add_executor_job(self._local_request_dps, missing)
+            _LOGGER.debug("Requested %d hidden DPs from device: %s", len(missing), missing)
+        except Exception as err:  # never let this break the poll
+            _LOGGER.debug("updatedps(%s) failed: %s", missing, err)
+
     def _pending_raw_dp_ids(self) -> list[int]:
         """Model'de tanımlı raw dp_id'lerden, henüz self.data içinde
         karşılığı olmayanları döndürür. Local (LAN) bağlantıda bazı
@@ -460,6 +490,18 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             raise TimeoutError("Local socket lock alınamadı (heartbeat)")
         try:
             return self.local_device.heartbeat()
+        finally:
+            self._local_socket_lock.release()
+
+    def _local_request_dps(self, dp_ids: list[int]):
+        """Locked wrapper around local_device.updatedps(): asks the device
+        to (re)send specific DP ids. Devices only include a subset of DPs
+        in a plain status() frame; the rest are pushed on request and
+        arrive through _listen_loop like any other update."""
+        if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
+            raise TimeoutError("Local socket lock alınamadı (updatedps)")
+        try:
+            return self.local_device.updatedps(dp_ids)
         finally:
             self._local_socket_lock.release()
 
@@ -1286,6 +1328,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                
                 data = self._process_local_dps(status['dps'])
                 self._apply_sent_cache(data)
+                await self._async_request_hidden_dps(data)
                 return data
           
             except Exception as err:

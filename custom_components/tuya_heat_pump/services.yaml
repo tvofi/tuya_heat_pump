@@ -1,0 +1,50 @@
+write_dp:
+  name: Write data point
+  description: >-
+    Write any Tuya data point (register) of the heat pump by code or numeric
+    DP id, using the same cloud/local path the entities use. Meant for
+    registers that have no entity yet, or that the schema marks read-only
+    but the device accepts. Check the value in Download diagnostics first.
+  fields:
+    device_id:
+      name: Device
+      description: The heat pump (optional when only one is configured).
+      selector:
+        device:
+          integration: tuya_heat_pump
+    code:
+      name: Code
+      description: Tuya DP code, e.g. DHWSET. Either code or dp_id is required.
+      example: DHWSET
+      selector:
+        text:
+    dp_id:
+      name: DP id
+      description: Numeric Tuya DP id, e.g. 104. Either code or dp_id is required.
+      example: 104
+      selector:
+        number:
+          min: 1
+          max: 255
+          mode: box
+    value:
+      name: Value
+      description: >-
+        The raw value to send: true/false for bool DPs, an integer for value
+        DPs (already multiplied by the DP's scale), the option key for enum
+        DPs, base64 for raw DPs.
+      required: true
+      example: 48
+      selector:
+        text:
+
+refresh:
+  name: Refresh
+  description: Poll the heat pump now instead of waiting for the next interval.
+  fields:
+    device_id:
+      name: Device
+      description: The heat pump (optional when only one is configured).
+      selector:
+        device:
+          integration: tuya_heat_pump

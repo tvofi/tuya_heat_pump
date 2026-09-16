@@ -257,6 +257,21 @@ SENSOR_TYPES = {
         "icon": "mdi:alert-circle-outline",
         "conversion": _FAULT_CONVERSION,
     },
+
+    # ---- Raw / undecoded ----
+    # Timer schedule blob (dp 16, raw, up to 128 bytes, rw). Layout not
+    # decoded yet: watch it change in test/raw_explorer.py while editing
+    # the schedule in the Tuya app, then map fields with field_index /
+    # encoding entries (see docs/MAPPING_REGISTERS.md). Shown base64,
+    # disabled by default.
+    "timer": {
+        "dp_id": 16,
+        "code": "timer",
+        "name": "Timer Schedule (raw)",
+        "icon": "mdi:code-brackets",
+        "entity_category": "diagnostic",
+        "enabled_default": False,
+    },
 }
 
 # ====================================================
