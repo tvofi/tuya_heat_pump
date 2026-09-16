@@ -89,10 +89,11 @@ simply gets the new name and scaling.
 
 Not sure what a DP means? The `tuya_name` attribute (Chinese) is usually more
 truthful than the English code — e.g. `temp_current_f` is `水箱温度` = tank
-temperature, `switch_microwave` is `水箱电加热` = tank electric heater. For
-Midea-based units the Midea M-Thermal service manual and the community
-Modbus register lists use the same sensor names (T1, T1B, T3, T4, T5, Tw2,
-TW_in/TW_out, Tbt1/Tbt2, Ta, Th, Tp).
+temperature, `switch_microwave` is `水箱电加热` = tank electric heater, and on
+the Rotenso Windmi `T5` is `排气温度` = compressor discharge, not the tank.
+Codes such as T1, T1B, T3, T4, T5, Tw2 are Midea-style labels that GCHV's
+Tuya firmware re-uses for other probes, so trust the Chinese name, not the
+code.
 
 ## 5. Writable registers that discovery typed read-only
 
@@ -135,7 +136,16 @@ Raw DPs are opaque byte arrays, often several values packed together.
 Raw-field entries work in `SENSOR_TYPES`, `NUMBER_TYPES`, `SWITCH_TYPES` and
 `SELECT_TYPES`.
 
-## 7. Contribute it back
+## 7. Parameters that are not in the Tuya schema at all
+
+If a setting you know from the wired controller's installer menu does not
+appear in `schema` (backup heater, tank heater, double zone, weather curves,
+ambient limits, …), the Tuya module simply does not expose it and no model
+file can add it. These parameters are available on the unit's Modbus port
+instead: see [modbus/README.md](modbus/README.md) for ready-made Home
+Assistant packages (Rotenso Windmi / GCHV, and Midea M-Thermal OEMs).
+
+## 8. Contribute it back
 
 Once the entries are named and verified on the device, open a pull request
 (or an issue with the diagnostics JSON attached) in the upstream repository

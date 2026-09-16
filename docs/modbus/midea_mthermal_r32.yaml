@@ -1,0 +1,3717 @@
+# ---------------------------------------------------------------------------
+# Midea M-Thermal OEMs (Kaisai / Airwell / Ferroli / Inventor / Kaysun ...)
+# NOT for Rotenso Windmi (GCHV unit): use rotenso_windmi_gchv.yaml instead.
+# Modbus RTU package for Home Assistant -- GENERATED, do not edit by hand.
+#   generator : tools/gen_modbus_package.py 
+#   registers : community map from Mosibi/Midea-heat-pump-ESPHome (Apache-2.0)
+#   wiring    : RS485 A+ -> H2, B- -> H1 on the wired controller PCB,
+#               9600 baud 8N1, slave address 1 (see docs/modbus/README.md)
+#
+# Change the `modbus:` hub below to match your adapter:
+#   USB RS485 dongle : type: serial, port: /dev/ttyUSB0 (as generated)
+#   TCP gateway      : type: rtuovertcp, host: 192.168.x.y, port: 502
+#                      (remove baudrate/bytesize/parity/stopbits/method)
+# Installer parameters change how the heat pump protects itself. Write them
+# only if you know what they do (FOR SERVICEMAN section of the manual).
+# ---------------------------------------------------------------------------
+modbus:
+- name: heatpump
+  type: serial
+  port: /dev/ttyUSB0
+  baudrate: 9600
+  bytesize: 8
+  parity: N
+  stopbits: 1
+  method: rtu
+  sensors:
+  - name: HP t_SG_MAX (smart grid max run time)
+    unique_id: hp_t_sg_max_smart_grid_max_run_time
+    slave: 1
+    address: 10
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: h
+  - name: HP Compressor frequency
+    unique_id: hp_compressor_frequency
+    slave: 1
+    address: 100
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+  - name: HP Fan speed
+    unique_id: hp_fan_speed
+    slave: 1
+    address: 102
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: rpm
+    state_class: measurement
+  - name: HP Expansion valve opening (PMV)
+    unique_id: hp_expansion_valve_opening_pmv
+    slave: 1
+    address: 103
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: steps
+    state_class: measurement
+  - name: HP Water inlet temperature Tw_in
+    unique_id: hp_water_inlet_temperature_tw_in
+    slave: 1
+    address: 104
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Water outlet temperature Tw_out
+    unique_id: hp_water_outlet_temperature_tw_out
+    slave: 1
+    address: 105
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Outdoor coil temperature T3
+    unique_id: hp_outdoor_coil_temperature_t3
+    slave: 1
+    address: 106
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Outdoor ambient temperature T4
+    unique_id: hp_outdoor_ambient_temperature_t4
+    slave: 1
+    address: 107
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Compressor discharge temperature Tp
+    unique_id: hp_compressor_discharge_temperature_tp
+    slave: 1
+    address: 108
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Compressor suction temperature Th
+    unique_id: hp_compressor_suction_temperature_th
+    slave: 1
+    address: 109
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Total outlet water temperature T1
+    unique_id: hp_total_outlet_water_temperature_t1
+    slave: 1
+    address: 110
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Outlet water after backup heater T1B
+    unique_id: hp_outlet_water_after_backup_heater_t1b
+    slave: 1
+    address: 111
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Refrigerant liquid temperature T2
+    unique_id: hp_refrigerant_liquid_temperature_t2
+    slave: 1
+    address: 112
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Refrigerant gas temperature T2B
+    unique_id: hp_refrigerant_gas_temperature_t2b
+    slave: 1
+    address: 113
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Room temperature Ta
+    unique_id: hp_room_temperature_ta
+    slave: 1
+    address: 114
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP DHW tank temperature T5
+    unique_id: hp_dhw_tank_temperature_t5
+    slave: 1
+    address: 115
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP High pressure
+    unique_id: hp_high_pressure
+    slave: 1
+    address: 116
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: kPa
+    device_class: pressure
+    state_class: measurement
+  - name: HP Low pressure
+    unique_id: hp_low_pressure
+    slave: 1
+    address: 117
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: kPa
+    device_class: pressure
+    state_class: measurement
+  - name: HP Outdoor unit current
+    unique_id: hp_outdoor_unit_current
+    slave: 1
+    address: 118
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+  - name: HP Outdoor unit voltage
+    unique_id: hp_outdoor_unit_voltage
+    slave: 1
+    address: 119
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+  - name: HP Buffer tank upper temperature Tbt1
+    unique_id: hp_buffer_tank_upper_temperature_tbt1
+    slave: 1
+    address: 120
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Buffer tank lower temperature Tbt2
+    unique_id: hp_buffer_tank_lower_temperature_tbt2
+    slave: 1
+    address: 121
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Compressor operating hours
+    unique_id: hp_compressor_operating_hours
+    slave: 1
+    address: 122
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: h
+    device_class: duration
+    state_class: total_increasing
+  - name: HP Unit capacity code
+    unique_id: hp_unit_capacity_code
+    slave: 1
+    address: 123
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP Hydraulic module software version
+    unique_id: hp_hydraulic_module_software_version
+    slave: 1
+    address: 130
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP Wired controller software version
+    unique_id: hp_wired_controller_software_version
+    slave: 1
+    address: 131
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP Compressor target frequency
+    unique_id: hp_compressor_target_frequency
+    slave: 1
+    address: 132
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+  - name: HP DC bus current
+    unique_id: hp_dc_bus_current
+    slave: 1
+    address: 133
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+  - name: HP DC bus voltage
+    unique_id: hp_dc_bus_voltage
+    slave: 1
+    address: 134
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    scale: 10
+  - name: HP Inverter module temperature TF
+    unique_id: hp_inverter_module_temperature_tf
+    slave: 1
+    address: 135
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Weather curve target T1S zone 1
+    unique_id: hp_weather_curve_target_t1s_zone_1
+    slave: 1
+    address: 136
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Weather curve target T1S zone 2
+    unique_id: hp_weather_curve_target_t1s_zone_2
+    slave: 1
+    address: 137
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Water flow
+    unique_id: hp_water_flow
+    slave: 1
+    address: 138
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: m³/h
+    state_class: measurement
+    scale: 0.01
+    precision: 2
+  - name: HP Outdoor unit current limit scheme
+    unique_id: hp_outdoor_unit_current_limit_scheme
+    slave: 1
+    address: 139
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP Hydraulic module capacity
+    unique_id: hp_hydraulic_module_capacity
+    slave: 1
+    address: 140
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    scale: 0.01
+    precision: 2
+  - name: HP Solar temperature Tsolar
+    unique_id: hp_solar_temperature_tsolar
+    slave: 1
+    address: 141
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+  - name: HP Electricity consumption (counter)
+    unique_id: hp_electricity_consumption_counter
+    slave: 1
+    address: 143
+    input_type: holding
+    data_type: uint32
+    scan_interval: 120
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  - name: HP Heat output (counter)
+    unique_id: hp_heat_output_counter
+    slave: 1
+    address: 145
+    input_type: holding
+    data_type: uint32
+    scan_interval: 120
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  - name: HP Room setpoint Ts upper limit
+    unique_id: hp_room_setpoint_ts_upper_limit
+    slave: 1
+    address: 205
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: °C
+    device_class: temperature
+    scale: 0.5
+    precision: 1
+  - name: HP Room setpoint Ts lower limit
+    unique_id: hp_room_setpoint_ts_lower_limit
+    slave: 1
+    address: 206
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: °C
+    device_class: temperature
+    scale: 0.5
+    precision: 1
+  - name: HP DHW setpoint upper limit
+    unique_id: hp_dhw_setpoint_upper_limit
+    slave: 1
+    address: 207
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: °C
+    device_class: temperature
+  - name: HP DHW setpoint lower limit
+    unique_id: hp_dhw_setpoint_lower_limit
+    slave: 1
+    address: 208
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+    unit_of_measurement: °C
+    device_class: temperature
+  - name: HP MB R0
+    unique_id: hp_mb_r0
+    slave: 1
+    address: 0
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R1
+    unique_id: hp_mb_r1
+    slave: 1
+    address: 1
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R2
+    unique_id: hp_mb_r2
+    slave: 1
+    address: 2
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R3
+    unique_id: hp_mb_r3
+    slave: 1
+    address: 3
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R4
+    unique_id: hp_mb_r4
+    slave: 1
+    address: 4
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R5
+    unique_id: hp_mb_r5
+    slave: 1
+    address: 5
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R6
+    unique_id: hp_mb_r6
+    slave: 1
+    address: 6
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R7
+    unique_id: hp_mb_r7
+    slave: 1
+    address: 7
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R8
+    unique_id: hp_mb_r8
+    slave: 1
+    address: 8
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R9
+    unique_id: hp_mb_r9
+    slave: 1
+    address: 9
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R101
+    unique_id: hp_mb_r101
+    slave: 1
+    address: 101
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R124
+    unique_id: hp_mb_r124
+    slave: 1
+    address: 124
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R125
+    unique_id: hp_mb_r125
+    slave: 1
+    address: 125
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R126
+    unique_id: hp_mb_r126
+    slave: 1
+    address: 126
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R127
+    unique_id: hp_mb_r127
+    slave: 1
+    address: 127
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R128
+    unique_id: hp_mb_r128
+    slave: 1
+    address: 128
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R129
+    unique_id: hp_mb_r129
+    slave: 1
+    address: 129
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R142
+    unique_id: hp_mb_r142
+    slave: 1
+    address: 142
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R201
+    unique_id: hp_mb_r201
+    slave: 1
+    address: 201
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R202
+    unique_id: hp_mb_r202
+    slave: 1
+    address: 202
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R203
+    unique_id: hp_mb_r203
+    slave: 1
+    address: 203
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R204
+    unique_id: hp_mb_r204
+    slave: 1
+    address: 204
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R210
+    unique_id: hp_mb_r210
+    slave: 1
+    address: 210
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R211
+    unique_id: hp_mb_r211
+    slave: 1
+    address: 211
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP MB R269
+    unique_id: hp_mb_r269
+    slave: 1
+    address: 269
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R270
+    unique_id: hp_mb_r270
+    slave: 1
+    address: 270
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R272
+    unique_id: hp_mb_r272
+    slave: 1
+    address: 272
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R209
+    unique_id: hp_mb_r209
+    slave: 1
+    address: 209
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R212
+    unique_id: hp_mb_r212
+    slave: 1
+    address: 212
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R213
+    unique_id: hp_mb_r213
+    slave: 1
+    address: 213
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R214
+    unique_id: hp_mb_r214
+    slave: 1
+    address: 214
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R215
+    unique_id: hp_mb_r215
+    slave: 1
+    address: 215
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R216
+    unique_id: hp_mb_r216
+    slave: 1
+    address: 216
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R217
+    unique_id: hp_mb_r217
+    slave: 1
+    address: 217
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R218
+    unique_id: hp_mb_r218
+    slave: 1
+    address: 218
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R219
+    unique_id: hp_mb_r219
+    slave: 1
+    address: 219
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R220
+    unique_id: hp_mb_r220
+    slave: 1
+    address: 220
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R221
+    unique_id: hp_mb_r221
+    slave: 1
+    address: 221
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R222
+    unique_id: hp_mb_r222
+    slave: 1
+    address: 222
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R223
+    unique_id: hp_mb_r223
+    slave: 1
+    address: 223
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R224
+    unique_id: hp_mb_r224
+    slave: 1
+    address: 224
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R225
+    unique_id: hp_mb_r225
+    slave: 1
+    address: 225
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R226
+    unique_id: hp_mb_r226
+    slave: 1
+    address: 226
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R227
+    unique_id: hp_mb_r227
+    slave: 1
+    address: 227
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R228
+    unique_id: hp_mb_r228
+    slave: 1
+    address: 228
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R229
+    unique_id: hp_mb_r229
+    slave: 1
+    address: 229
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R230
+    unique_id: hp_mb_r230
+    slave: 1
+    address: 230
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R231
+    unique_id: hp_mb_r231
+    slave: 1
+    address: 231
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R232
+    unique_id: hp_mb_r232
+    slave: 1
+    address: 232
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R233
+    unique_id: hp_mb_r233
+    slave: 1
+    address: 233
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R234
+    unique_id: hp_mb_r234
+    slave: 1
+    address: 234
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R235
+    unique_id: hp_mb_r235
+    slave: 1
+    address: 235
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R237
+    unique_id: hp_mb_r237
+    slave: 1
+    address: 237
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R238
+    unique_id: hp_mb_r238
+    slave: 1
+    address: 238
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R240
+    unique_id: hp_mb_r240
+    slave: 1
+    address: 240
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R241
+    unique_id: hp_mb_r241
+    slave: 1
+    address: 241
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R242
+    unique_id: hp_mb_r242
+    slave: 1
+    address: 242
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R243
+    unique_id: hp_mb_r243
+    slave: 1
+    address: 243
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R244
+    unique_id: hp_mb_r244
+    slave: 1
+    address: 244
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R245
+    unique_id: hp_mb_r245
+    slave: 1
+    address: 245
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R246
+    unique_id: hp_mb_r246
+    slave: 1
+    address: 246
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R247
+    unique_id: hp_mb_r247
+    slave: 1
+    address: 247
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R248
+    unique_id: hp_mb_r248
+    slave: 1
+    address: 248
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R249
+    unique_id: hp_mb_r249
+    slave: 1
+    address: 249
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R250
+    unique_id: hp_mb_r250
+    slave: 1
+    address: 250
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R251
+    unique_id: hp_mb_r251
+    slave: 1
+    address: 251
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R252
+    unique_id: hp_mb_r252
+    slave: 1
+    address: 252
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R255
+    unique_id: hp_mb_r255
+    slave: 1
+    address: 255
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R256
+    unique_id: hp_mb_r256
+    slave: 1
+    address: 256
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R257
+    unique_id: hp_mb_r257
+    slave: 1
+    address: 257
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R258
+    unique_id: hp_mb_r258
+    slave: 1
+    address: 258
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R259
+    unique_id: hp_mb_r259
+    slave: 1
+    address: 259
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R260
+    unique_id: hp_mb_r260
+    slave: 1
+    address: 260
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R261
+    unique_id: hp_mb_r261
+    slave: 1
+    address: 261
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R262
+    unique_id: hp_mb_r262
+    slave: 1
+    address: 262
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R263
+    unique_id: hp_mb_r263
+    slave: 1
+    address: 263
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R264
+    unique_id: hp_mb_r264
+    slave: 1
+    address: 264
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R265
+    unique_id: hp_mb_r265
+    slave: 1
+    address: 265
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R266
+    unique_id: hp_mb_r266
+    slave: 1
+    address: 266
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+  - name: HP MB R267
+    unique_id: hp_mb_r267
+    slave: 1
+    address: 267
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R268
+    unique_id: hp_mb_r268
+    slave: 1
+    address: 268
+    input_type: holding
+    data_type: int16
+    scan_interval: 120
+  - name: HP MB R271
+    unique_id: hp_mb_r271
+    slave: 1
+    address: 271
+    input_type: holding
+    data_type: uint16
+    scan_interval: 120
+template:
+- sensor:
+  - name: HP Operating mode (actual)
+    unique_id: hp_operating_mode_actual
+    state: '{% set v = (states(''sensor.hp_mb_r101'') | int(0)) %}{% set m = {0: ''Off'', 2: ''Cooling'', 3: ''Heating'', 5: ''DHW''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r101'')) }}'
+  - name: HP Current fault code
+    unique_id: hp_current_fault_code
+    availability: '{{ is_number(states(''sensor.hp_mb_r124'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r124'') | int(0)) %}{% set m = {0: ''OK'', 1: ''E0'', 2: ''E1'', 3: ''E2'', 4: ''E3'', 5: ''E4'', 6: ''E5'', 7: ''E6'', 8: ''E7'', 9: ''E8'', 10: ''E9'', 11:
+      ''EA'', 12: ''Eb'', 13: ''Ec'', 14: ''Ed'', 15: ''EE'', 20: ''P0'', 21: ''P1'', 23: ''P3'', 24: ''P4'', 25: ''P5'', 26: ''P6'', 31: ''Pb'', 33: ''Pd'', 38: ''PP'', 39: ''H0'', 40: ''H1'', 41: ''H2'',
+      42: ''H3'', 43: ''H4'', 44: ''H5'', 45: ''H6'', 46: ''H7'', 47: ''H8'', 48: ''H9'', 49: ''HA'', 50: ''Hb'', 52: ''Hd'', 53: ''HE'', 54: ''HF'', 55: ''HH'', 57: ''HP'', 65: ''C7'', 112: ''bH'', 116:
+      ''F1'', 134: ''-'', 135: ''-'', 136: ''-'', 138: ''-'', 139: ''-'', 141: ''-'', 142: ''-'', 143: ''-''} %}{{ m[v] if v in m else v }}'
+  - name: HP Current fault description
+    unique_id: hp_current_fault_description
+    availability: '{{ is_number(states(''sensor.hp_mb_r124'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r124'') | int(0)) %}{% set m = {0: ''No fault'', 1: ''Water flow fault (E8 displayed 3 times)'', 2: ''Phase loss / L-N reversed (three phase units)'', 3: ''Communication
+      fault controller - hydraulic module'', 4: ''Final outlet water temperature sensor T1 fault'', 5: ''Water tank temperature sensor T5 fault'', 6: ''Condenser outlet refrigerant temperature sensor T3
+      fault'', 7: ''Ambient temperature sensor T4 fault'', 8: ''Buffer tank upper temperature sensor Tbt1 fault'', 9: ''Water flow failure'', 10: ''Suction temperature sensor Th fault'', 11: ''Discharge
+      temperature sensor Tp fault'', 12: ''Solar temperature sensor Tsolar fault'', 13: ''Buffer tank lower temperature sensor Tbt2 fault'', 14: ''Inlet water temperature sensor Tw_in fault'', 15: ''Hydraulic
+      module EEPROM failure'', 20: ''Low pressure switch protection'', 21: ''High pressure switch protection'', 23: ''Compressor overcurrent protection'', 24: ''High discharge temperature protection'',
+      25: ''|Tw_out - Tw_in| too big protection'', 26: ''Inverter module protection'', 31: ''Anti-freeze mode'', 33: ''High condenser refrigerant outlet temperature protection'', 38: ''Tw_out - Tw_in unusual
+      protection'', 39: ''Communication fault main board PCB B - hydraulic module'', 40: ''Communication fault inverter module PCB A - main board PCB B'', 41: ''Refrigerant liquid temperature sensor T2
+      fault'', 42: ''Refrigerant gas temperature sensor T2B fault'', 43: ''Three times P6 (L0/L1) protection'', 44: ''Room temperature sensor Ta fault'', 45: ''DC fan motor fault'', 46: ''Voltage protection'',
+      47: ''Pressure sensor fault'', 48: ''Zone 2 outlet water temperature sensor Tw2 fault'', 49: ''Outlet water temperature sensor Tw_out fault'', 50: ''3 times PP protection and Tw_out < 7 °C'', 52:
+      ''Communication fault between parallel hydraulic modules'', 53: ''Communication error main board - thermostat transfer board'', 54: ''Inverter module board EEPROM fault'', 55: ''H6 displayed 10 times
+      in 2 hours'', 57: ''Low pressure protection (Pe < 0.6) 3 times in 1 hour'', 65: ''Inverter module temperature too high protection'', 112: ''PED PCB fault'', 116: ''Low DC bus voltage protection'',
+      134: ''Module protection'', 135: ''DC bus low voltage protection'', 136: ''DC bus high voltage protection'', 138: ''MCE fault'', 139: ''Zero speed protection'', 141: ''Phase sequence fault'', 142:
+      ''Speed difference > 15 Hz between front and back clock'', 143: ''Speed difference > 15 Hz between real and set speed''} %}{{ m[v] if v in m else ''Unknown code '' ~ v }}'
+  - name: HP Fault history 1 code
+    unique_id: hp_fault_history_1_code
+    availability: '{{ is_number(states(''sensor.hp_mb_r125'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r125'') | int(0)) %}{% set m = {0: ''OK'', 1: ''E0'', 2: ''E1'', 3: ''E2'', 4: ''E3'', 5: ''E4'', 6: ''E5'', 7: ''E6'', 8: ''E7'', 9: ''E8'', 10: ''E9'', 11:
+      ''EA'', 12: ''Eb'', 13: ''Ec'', 14: ''Ed'', 15: ''EE'', 20: ''P0'', 21: ''P1'', 23: ''P3'', 24: ''P4'', 25: ''P5'', 26: ''P6'', 31: ''Pb'', 33: ''Pd'', 38: ''PP'', 39: ''H0'', 40: ''H1'', 41: ''H2'',
+      42: ''H3'', 43: ''H4'', 44: ''H5'', 45: ''H6'', 46: ''H7'', 47: ''H8'', 48: ''H9'', 49: ''HA'', 50: ''Hb'', 52: ''Hd'', 53: ''HE'', 54: ''HF'', 55: ''HH'', 57: ''HP'', 65: ''C7'', 112: ''bH'', 116:
+      ''F1'', 134: ''-'', 135: ''-'', 136: ''-'', 138: ''-'', 139: ''-'', 141: ''-'', 142: ''-'', 143: ''-''} %}{{ m[v] if v in m else v }}'
+  - name: HP Fault history 1 description
+    unique_id: hp_fault_history_1_description
+    availability: '{{ is_number(states(''sensor.hp_mb_r125'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r125'') | int(0)) %}{% set m = {0: ''No fault'', 1: ''Water flow fault (E8 displayed 3 times)'', 2: ''Phase loss / L-N reversed (three phase units)'', 3: ''Communication
+      fault controller - hydraulic module'', 4: ''Final outlet water temperature sensor T1 fault'', 5: ''Water tank temperature sensor T5 fault'', 6: ''Condenser outlet refrigerant temperature sensor T3
+      fault'', 7: ''Ambient temperature sensor T4 fault'', 8: ''Buffer tank upper temperature sensor Tbt1 fault'', 9: ''Water flow failure'', 10: ''Suction temperature sensor Th fault'', 11: ''Discharge
+      temperature sensor Tp fault'', 12: ''Solar temperature sensor Tsolar fault'', 13: ''Buffer tank lower temperature sensor Tbt2 fault'', 14: ''Inlet water temperature sensor Tw_in fault'', 15: ''Hydraulic
+      module EEPROM failure'', 20: ''Low pressure switch protection'', 21: ''High pressure switch protection'', 23: ''Compressor overcurrent protection'', 24: ''High discharge temperature protection'',
+      25: ''|Tw_out - Tw_in| too big protection'', 26: ''Inverter module protection'', 31: ''Anti-freeze mode'', 33: ''High condenser refrigerant outlet temperature protection'', 38: ''Tw_out - Tw_in unusual
+      protection'', 39: ''Communication fault main board PCB B - hydraulic module'', 40: ''Communication fault inverter module PCB A - main board PCB B'', 41: ''Refrigerant liquid temperature sensor T2
+      fault'', 42: ''Refrigerant gas temperature sensor T2B fault'', 43: ''Three times P6 (L0/L1) protection'', 44: ''Room temperature sensor Ta fault'', 45: ''DC fan motor fault'', 46: ''Voltage protection'',
+      47: ''Pressure sensor fault'', 48: ''Zone 2 outlet water temperature sensor Tw2 fault'', 49: ''Outlet water temperature sensor Tw_out fault'', 50: ''3 times PP protection and Tw_out < 7 °C'', 52:
+      ''Communication fault between parallel hydraulic modules'', 53: ''Communication error main board - thermostat transfer board'', 54: ''Inverter module board EEPROM fault'', 55: ''H6 displayed 10 times
+      in 2 hours'', 57: ''Low pressure protection (Pe < 0.6) 3 times in 1 hour'', 65: ''Inverter module temperature too high protection'', 112: ''PED PCB fault'', 116: ''Low DC bus voltage protection'',
+      134: ''Module protection'', 135: ''DC bus low voltage protection'', 136: ''DC bus high voltage protection'', 138: ''MCE fault'', 139: ''Zero speed protection'', 141: ''Phase sequence fault'', 142:
+      ''Speed difference > 15 Hz between front and back clock'', 143: ''Speed difference > 15 Hz between real and set speed''} %}{{ m[v] if v in m else ''Unknown code '' ~ v }}'
+  - name: HP Fault history 2 code
+    unique_id: hp_fault_history_2_code
+    availability: '{{ is_number(states(''sensor.hp_mb_r126'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r126'') | int(0)) %}{% set m = {0: ''OK'', 1: ''E0'', 2: ''E1'', 3: ''E2'', 4: ''E3'', 5: ''E4'', 6: ''E5'', 7: ''E6'', 8: ''E7'', 9: ''E8'', 10: ''E9'', 11:
+      ''EA'', 12: ''Eb'', 13: ''Ec'', 14: ''Ed'', 15: ''EE'', 20: ''P0'', 21: ''P1'', 23: ''P3'', 24: ''P4'', 25: ''P5'', 26: ''P6'', 31: ''Pb'', 33: ''Pd'', 38: ''PP'', 39: ''H0'', 40: ''H1'', 41: ''H2'',
+      42: ''H3'', 43: ''H4'', 44: ''H5'', 45: ''H6'', 46: ''H7'', 47: ''H8'', 48: ''H9'', 49: ''HA'', 50: ''Hb'', 52: ''Hd'', 53: ''HE'', 54: ''HF'', 55: ''HH'', 57: ''HP'', 65: ''C7'', 112: ''bH'', 116:
+      ''F1'', 134: ''-'', 135: ''-'', 136: ''-'', 138: ''-'', 139: ''-'', 141: ''-'', 142: ''-'', 143: ''-''} %}{{ m[v] if v in m else v }}'
+  - name: HP Fault history 2 description
+    unique_id: hp_fault_history_2_description
+    availability: '{{ is_number(states(''sensor.hp_mb_r126'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r126'') | int(0)) %}{% set m = {0: ''No fault'', 1: ''Water flow fault (E8 displayed 3 times)'', 2: ''Phase loss / L-N reversed (three phase units)'', 3: ''Communication
+      fault controller - hydraulic module'', 4: ''Final outlet water temperature sensor T1 fault'', 5: ''Water tank temperature sensor T5 fault'', 6: ''Condenser outlet refrigerant temperature sensor T3
+      fault'', 7: ''Ambient temperature sensor T4 fault'', 8: ''Buffer tank upper temperature sensor Tbt1 fault'', 9: ''Water flow failure'', 10: ''Suction temperature sensor Th fault'', 11: ''Discharge
+      temperature sensor Tp fault'', 12: ''Solar temperature sensor Tsolar fault'', 13: ''Buffer tank lower temperature sensor Tbt2 fault'', 14: ''Inlet water temperature sensor Tw_in fault'', 15: ''Hydraulic
+      module EEPROM failure'', 20: ''Low pressure switch protection'', 21: ''High pressure switch protection'', 23: ''Compressor overcurrent protection'', 24: ''High discharge temperature protection'',
+      25: ''|Tw_out - Tw_in| too big protection'', 26: ''Inverter module protection'', 31: ''Anti-freeze mode'', 33: ''High condenser refrigerant outlet temperature protection'', 38: ''Tw_out - Tw_in unusual
+      protection'', 39: ''Communication fault main board PCB B - hydraulic module'', 40: ''Communication fault inverter module PCB A - main board PCB B'', 41: ''Refrigerant liquid temperature sensor T2
+      fault'', 42: ''Refrigerant gas temperature sensor T2B fault'', 43: ''Three times P6 (L0/L1) protection'', 44: ''Room temperature sensor Ta fault'', 45: ''DC fan motor fault'', 46: ''Voltage protection'',
+      47: ''Pressure sensor fault'', 48: ''Zone 2 outlet water temperature sensor Tw2 fault'', 49: ''Outlet water temperature sensor Tw_out fault'', 50: ''3 times PP protection and Tw_out < 7 °C'', 52:
+      ''Communication fault between parallel hydraulic modules'', 53: ''Communication error main board - thermostat transfer board'', 54: ''Inverter module board EEPROM fault'', 55: ''H6 displayed 10 times
+      in 2 hours'', 57: ''Low pressure protection (Pe < 0.6) 3 times in 1 hour'', 65: ''Inverter module temperature too high protection'', 112: ''PED PCB fault'', 116: ''Low DC bus voltage protection'',
+      134: ''Module protection'', 135: ''DC bus low voltage protection'', 136: ''DC bus high voltage protection'', 138: ''MCE fault'', 139: ''Zero speed protection'', 141: ''Phase sequence fault'', 142:
+      ''Speed difference > 15 Hz between front and back clock'', 143: ''Speed difference > 15 Hz between real and set speed''} %}{{ m[v] if v in m else ''Unknown code '' ~ v }}'
+  - name: HP Fault history 3 code
+    unique_id: hp_fault_history_3_code
+    availability: '{{ is_number(states(''sensor.hp_mb_r127'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r127'') | int(0)) %}{% set m = {0: ''OK'', 1: ''E0'', 2: ''E1'', 3: ''E2'', 4: ''E3'', 5: ''E4'', 6: ''E5'', 7: ''E6'', 8: ''E7'', 9: ''E8'', 10: ''E9'', 11:
+      ''EA'', 12: ''Eb'', 13: ''Ec'', 14: ''Ed'', 15: ''EE'', 20: ''P0'', 21: ''P1'', 23: ''P3'', 24: ''P4'', 25: ''P5'', 26: ''P6'', 31: ''Pb'', 33: ''Pd'', 38: ''PP'', 39: ''H0'', 40: ''H1'', 41: ''H2'',
+      42: ''H3'', 43: ''H4'', 44: ''H5'', 45: ''H6'', 46: ''H7'', 47: ''H8'', 48: ''H9'', 49: ''HA'', 50: ''Hb'', 52: ''Hd'', 53: ''HE'', 54: ''HF'', 55: ''HH'', 57: ''HP'', 65: ''C7'', 112: ''bH'', 116:
+      ''F1'', 134: ''-'', 135: ''-'', 136: ''-'', 138: ''-'', 139: ''-'', 141: ''-'', 142: ''-'', 143: ''-''} %}{{ m[v] if v in m else v }}'
+  - name: HP Fault history 3 description
+    unique_id: hp_fault_history_3_description
+    availability: '{{ is_number(states(''sensor.hp_mb_r127'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r127'') | int(0)) %}{% set m = {0: ''No fault'', 1: ''Water flow fault (E8 displayed 3 times)'', 2: ''Phase loss / L-N reversed (three phase units)'', 3: ''Communication
+      fault controller - hydraulic module'', 4: ''Final outlet water temperature sensor T1 fault'', 5: ''Water tank temperature sensor T5 fault'', 6: ''Condenser outlet refrigerant temperature sensor T3
+      fault'', 7: ''Ambient temperature sensor T4 fault'', 8: ''Buffer tank upper temperature sensor Tbt1 fault'', 9: ''Water flow failure'', 10: ''Suction temperature sensor Th fault'', 11: ''Discharge
+      temperature sensor Tp fault'', 12: ''Solar temperature sensor Tsolar fault'', 13: ''Buffer tank lower temperature sensor Tbt2 fault'', 14: ''Inlet water temperature sensor Tw_in fault'', 15: ''Hydraulic
+      module EEPROM failure'', 20: ''Low pressure switch protection'', 21: ''High pressure switch protection'', 23: ''Compressor overcurrent protection'', 24: ''High discharge temperature protection'',
+      25: ''|Tw_out - Tw_in| too big protection'', 26: ''Inverter module protection'', 31: ''Anti-freeze mode'', 33: ''High condenser refrigerant outlet temperature protection'', 38: ''Tw_out - Tw_in unusual
+      protection'', 39: ''Communication fault main board PCB B - hydraulic module'', 40: ''Communication fault inverter module PCB A - main board PCB B'', 41: ''Refrigerant liquid temperature sensor T2
+      fault'', 42: ''Refrigerant gas temperature sensor T2B fault'', 43: ''Three times P6 (L0/L1) protection'', 44: ''Room temperature sensor Ta fault'', 45: ''DC fan motor fault'', 46: ''Voltage protection'',
+      47: ''Pressure sensor fault'', 48: ''Zone 2 outlet water temperature sensor Tw2 fault'', 49: ''Outlet water temperature sensor Tw_out fault'', 50: ''3 times PP protection and Tw_out < 7 °C'', 52:
+      ''Communication fault between parallel hydraulic modules'', 53: ''Communication error main board - thermostat transfer board'', 54: ''Inverter module board EEPROM fault'', 55: ''H6 displayed 10 times
+      in 2 hours'', 57: ''Low pressure protection (Pe < 0.6) 3 times in 1 hour'', 65: ''Inverter module temperature too high protection'', 112: ''PED PCB fault'', 116: ''Low DC bus voltage protection'',
+      134: ''Module protection'', 135: ''DC bus low voltage protection'', 136: ''DC bus high voltage protection'', 138: ''MCE fault'', 139: ''Zero speed protection'', 141: ''Phase sequence fault'', 142:
+      ''Speed difference > 15 Hz between front and back clock'', 143: ''Speed difference > 15 Hz between real and set speed''} %}{{ m[v] if v in m else ''Unknown code '' ~ v }}'
+  - name: HP T1S cooling upper limit zone 1
+    unique_id: hp_t1s_cooling_upper_limit_zone_1
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r201'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r201'') | int(0)) % 256 }}'
+  - name: HP T1S cooling upper limit zone 2
+    unique_id: hp_t1s_cooling_upper_limit_zone_2
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r201'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r201'') | int(0)) // 256 }}'
+  - name: HP T1S cooling lower limit zone 1
+    unique_id: hp_t1s_cooling_lower_limit_zone_1
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r202'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r202'') | int(0)) % 256 }}'
+  - name: HP T1S cooling lower limit zone 2
+    unique_id: hp_t1s_cooling_lower_limit_zone_2
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r202'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r202'') | int(0)) // 256 }}'
+  - name: HP T1S heating upper limit zone 1
+    unique_id: hp_t1s_heating_upper_limit_zone_1
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r203'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r203'') | int(0)) % 256 }}'
+  - name: HP T1S heating upper limit zone 2
+    unique_id: hp_t1s_heating_upper_limit_zone_2
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r203'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r203'') | int(0)) // 256 }}'
+  - name: HP T1S heating lower limit zone 1
+    unique_id: hp_t1s_heating_lower_limit_zone_1
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r204'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r204'') | int(0)) % 256 }}'
+  - name: HP T1S heating lower limit zone 2
+    unique_id: hp_t1s_heating_lower_limit_zone_2
+    unit_of_measurement: °C
+    device_class: temperature
+    availability: '{{ is_number(states(''sensor.hp_mb_r204'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r204'') | int(0)) // 256 }}'
+  - name: HP Water ΔT (Tw_out - Tw_in)
+    unique_id: hp_water_t_tw_out_tw_in
+    unit_of_measurement: °C
+    state_class: measurement
+    availability: '{{ is_number(states(''sensor.hp_water_outlet_temperature_tw_out'')) and is_number(states(''sensor.hp_water_inlet_temperature_tw_in'')) }}'
+    state: '{{ (states(''sensor.hp_water_outlet_temperature_tw_out'') | float) - (states(''sensor.hp_water_inlet_temperature_tw_in'') | float) }}'
+- binary_sensor:
+  - name: HP Holiday away
+    unique_id: hp_holiday_away
+    availability: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(32) > 0 }}'
+  - name: HP Defrosting
+    unique_id: hp_defrosting
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(2) > 0 }}'
+    device_class: cold
+  - name: HP Anti-freeze active
+    unique_id: hp_anti_freeze_active
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(4) > 0 }}'
+    device_class: cold
+  - name: HP Oil return
+    unique_id: hp_oil_return
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(8) > 0 }}'
+  - name: HP Remote on/off input
+    unique_id: hp_remote_on_off_input
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(16) > 0 }}'
+  - name: HP Outdoor unit test mode
+    unique_id: hp_outdoor_unit_test_mode
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(32) > 0 }}'
+  - name: HP Heating requested by room thermostat
+    unique_id: hp_heating_requested_by_room_thermostat
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(64) > 0 }}'
+    device_class: heat
+  - name: HP Cooling requested by room thermostat
+    unique_id: hp_cooling_requested_by_room_thermostat
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(128) > 0 }}'
+  - name: HP Solar signal input
+    unique_id: hp_solar_signal_input
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(256) > 0 }}'
+  - name: HP Tank anti-freeze active
+    unique_id: hp_tank_anti_freeze_active
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(512) > 0 }}'
+    device_class: cold
+  - name: HP Smart grid signal
+    unique_id: hp_smart_grid_signal
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(1024) > 0 }}'
+  - name: HP EVU signal
+    unique_id: hp_evu_signal
+    availability: '{{ is_number(states(''sensor.hp_mb_r128'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r128'') | int(0)) | bitwise_and(2048) > 0 }}'
+  - name: HP Backup heater IBH1 running
+    unique_id: hp_backup_heater_ibh1_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(1) > 0 }}'
+    device_class: heat
+  - name: HP Backup heater IBH2 running
+    unique_id: hp_backup_heater_ibh2_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(2) > 0 }}'
+    device_class: heat
+  - name: HP Tank heater TBH running
+    unique_id: hp_tank_heater_tbh_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(4) > 0 }}'
+    device_class: heat
+  - name: HP Internal pump PUMP_I running
+    unique_id: hp_internal_pump_pump_i_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(8) > 0 }}'
+    device_class: running
+  - name: HP Valve SV1
+    unique_id: hp_valve_sv1
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(16) > 0 }}'
+  - name: HP Valve SV2
+    unique_id: hp_valve_sv2
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(32) > 0 }}'
+  - name: HP External pump PUMP_O running
+    unique_id: hp_external_pump_pump_o_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(64) > 0 }}'
+    device_class: running
+  - name: HP DHW return pump PUMP_D running
+    unique_id: hp_dhw_return_pump_pump_d_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(128) > 0 }}'
+    device_class: running
+  - name: HP Mixing pump PUMP_C running
+    unique_id: hp_mixing_pump_pump_c_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(256) > 0 }}'
+    device_class: running
+  - name: HP Valve SV3
+    unique_id: hp_valve_sv3
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(512) > 0 }}'
+  - name: HP HEAT4 output
+    unique_id: hp_heat4_output
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(1024) > 0 }}'
+    device_class: heat
+  - name: HP Solar pump PUMP_S running
+    unique_id: hp_solar_pump_pump_s_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(2048) > 0 }}'
+    device_class: running
+  - name: HP Alarm output
+    unique_id: hp_alarm_output
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(4096) > 0 }}'
+    device_class: problem
+  - name: HP Run output
+    unique_id: hp_run_output
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(8192) > 0 }}'
+    device_class: running
+  - name: HP Additional heat source AHS running
+    unique_id: hp_additional_heat_source_ahs_running
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(16384) > 0 }}'
+    device_class: heat
+  - name: HP Defrost output
+    unique_id: hp_defrost_output
+    availability: '{{ is_number(states(''sensor.hp_mb_r129'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r129'') | int(0)) | bitwise_and(32768) > 0 }}'
+    device_class: cold
+  - name: HP T1S heating high/low temperature supported
+    unique_id: hp_t1s_heating_high_low_temperature_supported
+    availability: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(64) > 0 }}'
+  - name: HP T1S cooling high/low temperature supported
+    unique_id: hp_t1s_cooling_high_low_temperature_supported
+    availability: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(256) > 0 }}'
+  - name: HP Tank heater TBH supported
+    unique_id: hp_tank_heater_tbh_supported
+    availability: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(16384) > 0 }}'
+  - name: HP Cascade slave unit 1 online
+    unique_id: hp_cascade_slave_unit_1_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(2) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 2 online
+    unique_id: hp_cascade_slave_unit_2_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(4) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 3 online
+    unique_id: hp_cascade_slave_unit_3_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(8) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 4 online
+    unique_id: hp_cascade_slave_unit_4_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(16) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 5 online
+    unique_id: hp_cascade_slave_unit_5_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(32) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 6 online
+    unique_id: hp_cascade_slave_unit_6_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(64) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 7 online
+    unique_id: hp_cascade_slave_unit_7_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(128) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 8 online
+    unique_id: hp_cascade_slave_unit_8_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(256) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 9 online
+    unique_id: hp_cascade_slave_unit_9_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(512) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 10 online
+    unique_id: hp_cascade_slave_unit_10_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(1024) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 11 online
+    unique_id: hp_cascade_slave_unit_11_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(2048) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 12 online
+    unique_id: hp_cascade_slave_unit_12_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(4096) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 13 online
+    unique_id: hp_cascade_slave_unit_13_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(8192) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 14 online
+    unique_id: hp_cascade_slave_unit_14_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(16384) > 0 }}'
+    device_class: connectivity
+  - name: HP Cascade slave unit 15 online
+    unique_id: hp_cascade_slave_unit_15_online
+    availability: '{{ is_number(states(''sensor.hp_mb_r142'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r142'') | int(0)) | bitwise_and(32768) > 0 }}'
+    device_class: connectivity
+- number:
+  - name: HP DHW setpoint T5S (°C)
+    unique_id: hp_dhw_setpoint_t5s_c
+    min: 20
+    max: 65
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r4'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r4'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 4
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r4
+  - name: HP DHW pump run time (min)
+    unique_id: hp_dhw_pump_run_time_min
+    min: 5
+    max: 120
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r209'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r209'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 209
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r209
+  - name: HP dT5_ON DHW restart delta (°C)
+    unique_id: hp_dt5_on_dhw_restart_delta_c
+    min: 1
+    max: 30
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r212'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r212'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 212
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r212
+  - name: HP dT1S5 outlet vs tank delta (°C)
+    unique_id: hp_dt1s5_outlet_vs_tank_delta_c
+    min: 5
+    max: 40
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r213'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r213'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 213
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r213
+  - name: HP t_INTERVAL_DHW compressor restart interval DHW (min)
+    unique_id: hp_t_interval_dhw_compressor_restart_interval_dhw_min
+    min: 5
+    max: 30
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r214'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r214'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 214
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r214
+  - name: HP T4DHWMAX ambient max for DHW (°C)
+    unique_id: hp_t4dhwmax_ambient_max_for_dhw_c
+    min: 35
+    max: 43
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r215'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r215'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 215
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r215
+  - name: HP T4DHWMIN ambient min for DHW (°C)
+    unique_id: hp_t4dhwmin_ambient_min_for_dhw_c
+    min: -25
+    max: 5
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r216'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r216'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 216
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r216
+  - name: HP t_TBH_DELAY tank heater delay (min)
+    unique_id: hp_t_tbh_delay_tank_heater_delay_min
+    min: 0
+    max: 240
+    step: 5
+    availability: '{{ is_number(states(''sensor.hp_mb_r217'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r217'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 217
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r217
+  - name: HP dT5_TBH_OFF tank heater off delta (°C)
+    unique_id: hp_dt5_tbh_off_tank_heater_off_delta_c
+    min: 0
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r218'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r218'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 218
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r218
+  - name: HP T4_TBH_ON ambient for tank heater (°C)
+    unique_id: hp_t4_tbh_on_ambient_for_tank_heater_c
+    min: -5
+    max: 20
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r219'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r219'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 219
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r219
+  - name: HP T5S_DI disinfection temperature (°C)
+    unique_id: hp_t5s_di_disinfection_temperature_c
+    min: 60
+    max: 70
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r220'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r220'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 220
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r220
+  - name: HP t_DI_MAX disinfection max duration (min)
+    unique_id: hp_t_di_max_disinfection_max_duration_min
+    min: 90
+    max: 300
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r221'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r221'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 221
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r221
+  - name: HP t_DI_HIGHTEMP disinfection hold time (min)
+    unique_id: hp_t_di_hightemp_disinfection_hold_time_min
+    min: 5
+    max: 60
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r222'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r222'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 222
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r222
+  - name: HP t_INTERVAL_C compressor restart interval cooling (min)
+    unique_id: hp_t_interval_c_compressor_restart_interval_cooling_min
+    min: 5
+    max: 30
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r223'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r223'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 223
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r223
+  - name: HP dT1SC cooling water delta (°C)
+    unique_id: hp_dt1sc_cooling_water_delta_c
+    min: 2
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r224'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r224'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 224
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r224
+  - name: HP dTSC cooling room delta (°C)
+    unique_id: hp_dtsc_cooling_room_delta_c
+    min: 1
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r225'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r225'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 225
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r225
+  - name: HP T4CMAX ambient max for cooling (°C)
+    unique_id: hp_t4cmax_ambient_max_for_cooling_c
+    min: 35
+    max: 46
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r226'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r226'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 226
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r226
+  - name: HP T4CMIN ambient min for cooling (°C)
+    unique_id: hp_t4cmin_ambient_min_for_cooling_c
+    min: -5
+    max: 25
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r227'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r227'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 227
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r227
+  - name: HP t_INTERVAL_H compressor restart interval heating (min)
+    unique_id: hp_t_interval_h_compressor_restart_interval_heating_min
+    min: 5
+    max: 60
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r228'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r228'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 228
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r228
+  - name: HP dT1SH heating water delta (°C)
+    unique_id: hp_dt1sh_heating_water_delta_c
+    min: 2
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r229'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r229'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 229
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r229
+  - name: HP dTSH heating room delta (°C)
+    unique_id: hp_dtsh_heating_room_delta_c
+    min: 1
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r230'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r230'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 230
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r230
+  - name: HP T4HMAX ambient max for heating (°C)
+    unique_id: hp_t4hmax_ambient_max_for_heating_c
+    min: 20
+    max: 35
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r231'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r231'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 231
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r231
+  - name: HP T4HMIN ambient min for heating (°C)
+    unique_id: hp_t4hmin_ambient_min_for_heating_c
+    min: -25
+    max: 5
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r232'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r232'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 232
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r232
+  - name: HP T4_IBH_ON ambient for backup heater IBH (°C)
+    unique_id: hp_t4_ibh_on_ambient_for_backup_heater_ibh_c
+    min: -15
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r233'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r233'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 233
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r233
+  - name: HP dT1_IBH_ON backup heater IBH on delta (°C)
+    unique_id: hp_dt1_ibh_on_backup_heater_ibh_on_delta_c
+    min: 1
+    max: 7
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r234'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r234'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 234
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r234
+  - name: HP t_IBH_DELAY backup heater IBH delay (min)
+    unique_id: hp_t_ibh_delay_backup_heater_ibh_delay_min
+    min: 15
+    max: 120
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r235'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r235'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 235
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r235
+  - name: HP T4_AHS_ON ambient for additional heat source (°C)
+    unique_id: hp_t4_ahs_on_ambient_for_additional_heat_source_c
+    min: -15
+    max: 10
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r237'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r237'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 237
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r237
+  - name: HP dT1_AHS_ON additional heat source on delta (°C)
+    unique_id: hp_dt1_ahs_on_additional_heat_source_on_delta_c
+    min: 1
+    max: 7
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r238'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r238'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 238
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r238
+  - name: HP t_AHS_DELAY additional heat source delay (min)
+    unique_id: hp_t_ahs_delay_additional_heat_source_delay_min
+    min: 5
+    max: 120
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r240'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r240'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 240
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r240
+  - name: HP t_DHWHP_MAX DHW heat pump max run time (min)
+    unique_id: hp_t_dhwhp_max_dhw_heat_pump_max_run_time_min
+    min: 10
+    max: 600
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r241'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r241'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 241
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r241
+  - name: HP t_DHWHP_RESTRICT DHW heat pump restrict time (min)
+    unique_id: hp_t_dhwhp_restrict_dhw_heat_pump_restrict_time_min
+    min: 10
+    max: 600
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r242'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r242'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 242
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r242
+  - name: HP T4AUTOCMIN auto mode cooling ambient min (°C)
+    unique_id: hp_t4autocmin_auto_mode_cooling_ambient_min_c
+    min: 20
+    max: 29
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r243'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r243'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 243
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r243
+  - name: HP T4AUTOHMAX auto mode heating ambient max (°C)
+    unique_id: hp_t4autohmax_auto_mode_heating_ambient_max_c
+    min: 10
+    max: 17
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r244'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r244'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 244
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r244
+  - name: HP T1S_H.A._H holiday heating water setpoint (°C)
+    unique_id: hp_t1s_h_a_h_holiday_heating_water_setpoint_c
+    min: 20
+    max: 29
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r245'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r245'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 245
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r245
+  - name: HP T5S_H.A._DHW holiday DHW setpoint (°C)
+    unique_id: hp_t5s_h_a_dhw_holiday_dhw_setpoint_c
+    min: 20
+    max: 25
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r246'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r246'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 246
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r246
+  - name: HP PER_START cascade start ratio (%)
+    unique_id: hp_per_start_cascade_start_ratio
+    min: 10
+    max: 100
+    step: 10
+    availability: '{{ is_number(states(''sensor.hp_mb_r247'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r247'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 247
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r247
+  - name: HP TIME_ADJUST cascade time adjust (min)
+    unique_id: hp_time_adjust_cascade_time_adjust_min
+    min: 1
+    max: 60
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r248'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r248'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 248
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r248
+  - name: HP dTbt2 buffer tank delta (°C)
+    unique_id: hp_dtbt2_buffer_tank_delta_c
+    min: 0
+    max: 50
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r249'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r249'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 249
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r249
+  - name: HP P_IBH1 backup heater 1 power (kW)
+    unique_id: hp_p_ibh1_backup_heater_1_power_kw
+    min: 0
+    max: 20
+    step: 0.1
+    availability: '{{ is_number(states(''sensor.hp_mb_r250'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r250'') | int(0)) * 0.1 }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 250
+        value: '{{ ((value | float) / 0.1) | round | int % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r250
+  - name: HP P_IBH2 backup heater 2 power (kW)
+    unique_id: hp_p_ibh2_backup_heater_2_power_kw
+    min: 0
+    max: 20
+    step: 0.1
+    availability: '{{ is_number(states(''sensor.hp_mb_r251'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r251'') | int(0)) * 0.1 }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 251
+        value: '{{ ((value | float) / 0.1) | round | int % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r251
+  - name: HP P_TBH tank heater power (kW)
+    unique_id: hp_p_tbh_tank_heater_power_kw
+    min: 0
+    max: 20
+    step: 0.1
+    availability: '{{ is_number(states(''sensor.hp_mb_r252'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r252'') | int(0)) * 0.1 }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 252
+        value: '{{ ((value | float) / 0.1) | round | int % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r252
+  - name: 'HP Floor drying: temperature rise days'
+    unique_id: hp_floor_drying_temperature_rise_days
+    min: 4
+    max: 15
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r255'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r255'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 255
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r255
+  - name: 'HP Floor drying: drying days'
+    unique_id: hp_floor_drying_drying_days
+    min: 3
+    max: 7
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r256'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r256'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 256
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r256
+  - name: 'HP Floor drying: temperature drop days'
+    unique_id: hp_floor_drying_temperature_drop_days
+    min: 4
+    max: 15
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r257'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r257'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 257
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r257
+  - name: 'HP Floor drying: highest temperature (°C)'
+    unique_id: hp_floor_drying_highest_temperature_c
+    min: 30
+    max: 55
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r258'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r258'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 258
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r258
+  - name: 'HP Floor pre-heating: run time (h)'
+    unique_id: hp_floor_pre_heating_run_time_h
+    min: 48
+    max: 96
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r259'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r259'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 259
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r259
+  - name: 'HP Floor pre-heating: T1S (°C)'
+    unique_id: hp_floor_pre_heating_t1s_c
+    min: 25
+    max: 35
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r260'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r260'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 260
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r260
+  - name: HP T1SetC1 cooling curve point 1 (°C)
+    unique_id: hp_t1setc1_cooling_curve_point_1_c
+    min: 5
+    max: 25
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r261'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r261'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 261
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r261
+  - name: HP T1SetC2 cooling curve point 2 (°C)
+    unique_id: hp_t1setc2_cooling_curve_point_2_c
+    min: 5
+    max: 25
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r262'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r262'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 262
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r262
+  - name: HP T4C1 cooling curve ambient 1 (°C)
+    unique_id: hp_t4c1_cooling_curve_ambient_1_c
+    min: -5
+    max: 46
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r263'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r263'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 263
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r263
+  - name: HP T4C2 cooling curve ambient 2 (°C)
+    unique_id: hp_t4c2_cooling_curve_ambient_2_c
+    min: -5
+    max: 46
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r264'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r264'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 264
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r264
+  - name: HP T1SetH1 heating curve point 1 (°C)
+    unique_id: hp_t1seth1_heating_curve_point_1_c
+    min: 25
+    max: 65
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r265'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r265'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 265
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r265
+  - name: HP T1SetH2 heating curve point 2 (°C)
+    unique_id: hp_t1seth2_heating_curve_point_2_c
+    min: 25
+    max: 65
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r266'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r266'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 266
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r266
+  - name: HP T4H1 heating curve ambient 1 (°C)
+    unique_id: hp_t4h1_heating_curve_ambient_1_c
+    min: -25
+    max: 30
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r267'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r267'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 267
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r267
+  - name: HP T4H2 heating curve ambient 2 (°C)
+    unique_id: hp_t4h2_heating_curve_ambient_2_c
+    min: -25
+    max: 30
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r268'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r268'') | int(0)) }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 268
+        value: '{{ (value | int) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r268
+  - name: HP t_DELAY_PUMP built-in pump delay (min)
+    unique_id: hp_t_delay_pump_built_in_pump_delay_min
+    min: 2
+    max: 20
+    step: 0.5
+    availability: '{{ is_number(states(''sensor.hp_mb_r271'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r271'') | int(0)) * 0.5 }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 271
+        value: '{{ ((value | float) / 0.5) | round | int % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r271
+  - name: HP Water setpoint T1S zone 1 (°C)
+    unique_id: hp_water_setpoint_t1s_zone_1_c
+    min: 5
+    max: 65
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r2'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r2'') | int(0)) % 256) * 1 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r2'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 2
+        value: '{{ ((states(''sensor.hp_mb_r2'') | int(0)) // 256) * 256 + (((value | float) / 1) | round | int) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r2
+  - name: HP Water setpoint T1S zone 2 (°C)
+    unique_id: hp_water_setpoint_t1s_zone_2_c
+    min: 5
+    max: 65
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r2'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r2'') | int(0)) // 256) * 1 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r2'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 2
+        value: '{{ ((states(''sensor.hp_mb_r2'') | int(0)) % 256) + (((value | float) / 1) | round | int) * 256 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r2
+  - name: HP Weather curve zone 1 (1-8, 9=custom)
+    unique_id: hp_weather_curve_zone_1_1_8_9_custom
+    min: 1
+    max: 9
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r6'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r6'') | int(0)) % 256) * 1 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r6'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 6
+        value: '{{ ((states(''sensor.hp_mb_r6'') | int(0)) // 256) * 256 + (((value | float) / 1) | round | int) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r6
+  - name: HP Weather curve zone 2 (1-8, 9=custom)
+    unique_id: hp_weather_curve_zone_2_1_8_9_custom
+    min: 1
+    max: 9
+    step: 1
+    availability: '{{ is_number(states(''sensor.hp_mb_r6'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r6'') | int(0)) // 256) * 1 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r6'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 6
+        value: '{{ ((states(''sensor.hp_mb_r6'') | int(0)) % 256) + (((value | float) / 1) | round | int) * 256 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r6
+  - name: HP t_T4_FRESH_H heating T4 refresh time (h)
+    unique_id: hp_t_t4_fresh_h_heating_t4_refresh_time_h
+    min: 0.5
+    max: 6
+    step: 0.5
+    availability: '{{ is_number(states(''sensor.hp_mb_r270'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r270'') | int(0)) % 256) * 0.5 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r270'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 270
+        value: '{{ ((states(''sensor.hp_mb_r270'') | int(0)) // 256) * 256 + (((value | float) / 0.5) | round | int) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r270
+  - name: HP t_T4_FRESH_C cooling T4 refresh time (h)
+    unique_id: hp_t_t4_fresh_c_cooling_t4_refresh_time_h
+    min: 0.5
+    max: 6
+    step: 0.5
+    availability: '{{ is_number(states(''sensor.hp_mb_r270'')) }}'
+    state: '{{ ((states(''sensor.hp_mb_r270'') | int(0)) // 256) * 0.5 }}'
+    set_value:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r270'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 270
+        value: '{{ ((states(''sensor.hp_mb_r270'') | int(0)) % 256) + (((value | float) / 0.5) | round | int) * 256 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r270
+  - name: HP Room setpoint Ts (°C)
+    unique_id: hp_room_setpoint_ts_c
+    min: 17
+    max: 30
+    step: 0.5
+    availability: '{{ is_number(states(''sensor.hp_mb_r3'')) }}'
+    state: '{{ (states(''sensor.hp_mb_r3'') | int(0)) * 0.5 }}'
+    set_value:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 3
+        value: '{{ ((value | float) / 0.5) | round | int }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r3
+- select:
+  - name: HP Operating mode
+    unique_id: hp_operating_mode
+    options: '{{ [''Auto'', ''Cool'', ''Heat''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r1'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r1'') | int(0)) %}{% set m = {1: ''Auto'', 2: ''Cool'', 3: ''Heat''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 1
+        value: '{{ {''Auto'': 1, ''Cool'': 2, ''Heat'': 3}[option] }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r1
+  - name: HP Power input limitation
+    unique_id: hp_power_input_limitation
+    options: '{{ [''None'', ''1'', ''2'', ''3'', ''4'', ''5'', ''6'', ''7'', ''8''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r269'')) }}'
+    state: '{% set v = (states(''sensor.hp_mb_r269'') | int(0)) %}{% set m = {0: ''None'', 1: ''1'', 2: ''2'', 3: ''3'', 4: ''4'', 5: ''5'', 6: ''6'', 7: ''7'', 8: ''8''} %}{{ m[v] if v in m else ''Unknown''
+      }}'
+    select_option:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 269
+        value: '{{ {''None'': 0, ''1'': 1, ''2'': 2, ''3'': 3, ''4'': 4, ''5'': 5, ''6'': 6, ''7'': 7, ''8'': 8}[option] }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r269
+  - name: HP Zone 1 heating emitter type
+    unique_id: hp_zone_1_heating_emitter_type
+    options: '{{ [''Fan coil unit'', ''Radiator'', ''Underfloor heating''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    state: '{% set v = ((states(''sensor.hp_mb_r272'') | int(0)) // 1) % 16 %}{% set m = {0: ''Fan coil unit'', 1: ''Radiator'', 2: ''Underfloor heating''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 272
+        value: '{{ ((states(''sensor.hp_mb_r272'') | int(0)) | bitwise_and(65520)) | bitwise_or({''Fan coil unit'': 0, ''Radiator'': 1, ''Underfloor heating'': 2}[option] * 1) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r272
+  - name: HP Zone 2 heating emitter type
+    unique_id: hp_zone_2_heating_emitter_type
+    options: '{{ [''Fan coil unit'', ''Radiator'', ''Underfloor heating''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    state: '{% set v = ((states(''sensor.hp_mb_r272'') | int(0)) // 16) % 16 %}{% set m = {0: ''Fan coil unit'', 1: ''Radiator'', 2: ''Underfloor heating''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 272
+        value: '{{ ((states(''sensor.hp_mb_r272'') | int(0)) | bitwise_and(65295)) | bitwise_or({''Fan coil unit'': 0, ''Radiator'': 1, ''Underfloor heating'': 2}[option] * 16) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r272
+  - name: HP Zone 1 cooling emitter type
+    unique_id: hp_zone_1_cooling_emitter_type
+    options: '{{ [''Fan coil unit'', ''Radiator'', ''Underfloor heating''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    state: '{% set v = ((states(''sensor.hp_mb_r272'') | int(0)) // 256) % 16 %}{% set m = {0: ''Fan coil unit'', 1: ''Radiator'', 2: ''Underfloor heating''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 272
+        value: '{{ ((states(''sensor.hp_mb_r272'') | int(0)) | bitwise_and(61695)) | bitwise_or({''Fan coil unit'': 0, ''Radiator'': 1, ''Underfloor heating'': 2}[option] * 256) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r272
+  - name: HP Zone 2 cooling emitter type
+    unique_id: hp_zone_2_cooling_emitter_type
+    options: '{{ [''Fan coil unit'', ''Radiator'', ''Underfloor heating''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    state: '{% set v = ((states(''sensor.hp_mb_r272'') | int(0)) // 4096) % 16 %}{% set m = {0: ''Fan coil unit'', 1: ''Radiator'', 2: ''Underfloor heating''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r272'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 272
+        value: '{{ ((states(''sensor.hp_mb_r272'') | int(0)) | bitwise_and(4095)) | bitwise_or({''Fan coil unit'': 0, ''Radiator'': 1, ''Underfloor heating'': 2}[option] * 4096) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r272
+  - name: HP Silent mode level
+    unique_id: hp_silent_mode_level
+    options: '{{ [''Level 1'', ''Level 2''] }}'
+    availability: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+    state: '{% set v = ((states(''sensor.hp_mb_r5'') | int(0)) // 128) % 2 %}{% set m = {0: ''Level 1'', 1: ''Level 2''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - condition: template
+      value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 1
+        address: 5
+        value: '{{ ((states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(65407)) | bitwise_or({''Level 1'': 0, ''Level 2'': 1}[option] * 128) }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_mb_r5
+switch:
+- platform: template
+  switches:
+    hp_room_temperature_control_ts:
+      unique_id: hp_room_temperature_control_ts
+      friendly_name: HP Room temperature control (Ts)
+      value_template: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(1) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_or(1) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(65534) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+    hp_zone_1_water_temperature_control:
+      unique_id: hp_zone_1_water_temperature_control
+      friendly_name: HP Zone 1 water temperature control
+      value_template: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(2) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_or(2) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(65533) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+    hp_dhw_on:
+      unique_id: hp_dhw_on
+      friendly_name: HP DHW on
+      value_template: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(4) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_or(4) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(65531) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+    hp_zone_2_water_temperature_control:
+      unique_id: hp_zone_2_water_temperature_control
+      friendly_name: HP Zone 2 water temperature control
+      value_template: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(8) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_or(8) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r0'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 0
+          value: '{{ (states(''sensor.hp_mb_r0'') | int(0)) | bitwise_and(65527) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r0
+    hp_disinfect:
+      unique_id: hp_disinfect
+      friendly_name: HP Disinfect
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(16) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(16) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(65519) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_silent_mode:
+      unique_id: hp_silent_mode
+      friendly_name: HP Silent mode
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(64) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(64) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(65471) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_holiday_home:
+      unique_id: hp_holiday_home
+      friendly_name: HP Holiday home
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(256) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(256) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(65279) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_eco_mode:
+      unique_id: hp_eco_mode
+      friendly_name: HP ECO mode
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(1024) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(1024) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(64511) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_dhw_pump_recirculation:
+      unique_id: hp_dhw_pump_recirculation
+      friendly_name: HP DHW pump recirculation
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(2048) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(2048) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(63487) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_weather_compensation_zone_1:
+      unique_id: hp_weather_compensation_zone_1
+      friendly_name: HP Weather compensation zone 1
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(4096) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(4096) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(61439) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_weather_compensation_zone_2:
+      unique_id: hp_weather_compensation_zone_2
+      friendly_name: HP Weather compensation zone 2
+      value_template: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(8192) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_or(8192) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r5'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 5
+          value: '{{ (states(''sensor.hp_mb_r5'') | int(0)) | bitwise_and(57343) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r5
+    hp_dhw_priority_heating_cooling_first_when_off:
+      unique_id: hp_dhw_priority_heating_cooling_first_when_off
+      friendly_name: HP DHW priority (heating/cooling first when off)
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(1) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(1) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65534) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_dual_room_thermostat:
+      unique_id: hp_dual_room_thermostat
+      friendly_name: HP Dual room thermostat
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(2) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(2) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65533) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_room_thermostat_mode:
+      unique_id: hp_room_thermostat_mode
+      friendly_name: HP Room thermostat mode
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(4) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(4) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65531) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_room_thermostat_installed:
+      unique_id: hp_room_thermostat_installed
+      friendly_name: HP Room thermostat installed
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(8) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(8) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65527) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_room_temperature_sensor_ta_installed:
+      unique_id: hp_room_temperature_sensor_ta_installed
+      friendly_name: HP Room temperature sensor Ta installed
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(16) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(16) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65519) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_pump_i_silent_mode:
+      unique_id: hp_pump_i_silent_mode
+      friendly_name: HP PUMP_I silent mode
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(32) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(32) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65503) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_heating_mode_enabled:
+      unique_id: hp_heating_mode_enabled
+      friendly_name: HP Heating mode enabled
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(128) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(128) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65407) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_cooling_mode_enabled:
+      unique_id: hp_cooling_mode_enabled
+      friendly_name: HP Cooling mode enabled
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(512) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(512) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(65023) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_dhw_pump_pipe_disinfect:
+      unique_id: hp_dhw_pump_pipe_disinfect
+      friendly_name: HP DHW pump pipe disinfect
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(1024) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(1024) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(64511) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_dhw_pump_installed:
+      unique_id: hp_dhw_pump_installed
+      friendly_name: HP DHW pump installed
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(4096) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(4096) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(61439) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_disinfection_enabled:
+      unique_id: hp_disinfection_enabled
+      friendly_name: HP Disinfection enabled
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(8192) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(8192) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(57343) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_dhw_mode_enabled:
+      unique_id: hp_dhw_mode_enabled
+      friendly_name: HP DHW mode enabled
+      value_template: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(32768) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_or(32768) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r210'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 210
+          value: '{{ (states(''sensor.hp_mb_r210'') | int(0)) | bitwise_and(32767) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r210
+    hp_ibh_ahs_location_ibh_locate:
+      unique_id: hp_ibh_ahs_location_ibh_locate
+      friendly_name: HP IBH/AHS location (IBH LOCATE)
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(1) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(1) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65534) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_buffer_tank_sensor_tbt1_enabled:
+      unique_id: hp_buffer_tank_sensor_tbt1_enabled
+      friendly_name: HP Buffer tank sensor Tbt1 enabled
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(2) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(2) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65533) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_ta_sensor_position:
+      unique_id: hp_ta_sensor_position
+      friendly_name: HP Ta sensor position
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(4) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(4) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65531) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_double_zone:
+      unique_id: hp_double_zone
+      friendly_name: HP Double zone
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(8) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(8) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65527) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_heating_t1s_high_low_temperature_setting:
+      unique_id: hp_heating_t1s_high_low_temperature_setting
+      friendly_name: HP Heating T1S high/low temperature setting
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(16) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(16) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65519) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_cooling_t1s_high_low_temperature_setting:
+      unique_id: hp_cooling_t1s_high_low_temperature_setting
+      friendly_name: HP Cooling T1S high/low temperature setting
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(32) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(32) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65503) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_t1b_tw2_zone_2_sensor_enabled:
+      unique_id: hp_t1b_tw2_zone_2_sensor_enabled
+      friendly_name: HP T1B / Tw2 zone 2 sensor enabled
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(64) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(64) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65471) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_smart_grid:
+      unique_id: hp_smart_grid
+      friendly_name: HP Smart grid
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(128) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(128) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65407) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_m1m2_port_definition_on_off_input:
+      unique_id: hp_m1m2_port_definition_on_off_input
+      friendly_name: HP M1M2 port definition (ON/OFF input)
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(256) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(256) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65279) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_solar_kit_enabled:
+      unique_id: hp_solar_kit_enabled
+      friendly_name: HP Solar kit enabled
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(512) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(512) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(65023) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_solar_input_port:
+      unique_id: hp_solar_input_port
+      friendly_name: HP Solar input port
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(1024) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(1024) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(64511) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_piping_length_selection:
+      unique_id: hp_piping_length_selection
+      friendly_name: HP Piping length selection
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(2048) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(2048) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(63487) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_buffer_tank_sensor_tbt2_enabled:
+      unique_id: hp_buffer_tank_sensor_tbt2_enabled
+      friendly_name: HP Buffer tank sensor Tbt2 enabled
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(4096) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(4096) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(61439) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_temperature_collection_kit_rt_ta_pcb:
+      unique_id: hp_temperature_collection_kit_rt_ta_pcb
+      friendly_name: HP Temperature collection kit (RT/Ta_PCB)
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(8192) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(8192) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(57343) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_m1m2_used_for_ahs_control:
+      unique_id: hp_m1m2_used_for_ahs_control
+      friendly_name: HP M1M2 used for AHS control
+      value_template: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(16384) > 0 }}'
+      turn_on:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_or(16384) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+      turn_off:
+      - condition: template
+        value_template: '{{ is_number(states(''sensor.hp_mb_r211'')) }}'
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 211
+          value: '{{ (states(''sensor.hp_mb_r211'') | int(0)) | bitwise_and(49151) }}'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r211
+    hp_force_dhw_heating:
+      unique_id: hp_force_dhw_heating
+      friendly_name: HP Force DHW heating
+      value_template: '{{ (states(''sensor.hp_mb_r7'') | int(0)) == 1 }}'
+      turn_on:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 7
+          value: '1'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r7
+      turn_off:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 7
+          value: '2'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r7
+    hp_force_tank_heater_tbh:
+      unique_id: hp_force_tank_heater_tbh
+      friendly_name: HP Force tank heater TBH
+      value_template: '{{ (states(''sensor.hp_mb_r8'') | int(0)) == 1 }}'
+      turn_on:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 8
+          value: '1'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r8
+      turn_off:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 8
+          value: '2'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r8
+    hp_force_backup_heater_ibh1:
+      unique_id: hp_force_backup_heater_ibh1
+      friendly_name: HP Force backup heater IBH1
+      value_template: '{{ (states(''sensor.hp_mb_r9'') | int(0)) == 1 }}'
+      turn_on:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 9
+          value: '1'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r9
+      turn_off:
+      - service: modbus.write_register
+        data:
+          hub: heatpump
+          slave: 1
+          address: 9
+          value: '2'
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.hp_mb_r9

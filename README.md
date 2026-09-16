@@ -134,6 +134,10 @@ A model file only knows the data points its author labelled. Everything else you
 - Two services complete the picture: `tuya_heat_pump.write_dp` writes any DP by code or id (for registers without an entity, or ones the schema wrongly marks read-only) and `tuya_heat_pump.refresh` polls immediately.
 - Step-by-step guide to turning discovered entities into curated ones, decoding raw blobs and generating a model file from the diagnostics: 📖 **[docs/MAPPING_REGISTERS.md](https://github.com/Korkuttum/tuya_heat_pump/blob/main/docs/MAPPING_REGISTERS.md)**
 
+### Installer parameters via Modbus (Rotenso Windmi / GCHV, Midea OEMs)
+
+The Tuya module carries no installer parameters (backup heater, tank heater, double zone, curves, ambient limits, …); the Rotenso Windmi's schema, for example, is exactly 25 data points. Those settings live on the unit's Modbus RTU port. `docs/modbus/` contains ready-made Home Assistant packages (standard `modbus` + `template` integrations, no custom component): one for the **Rotenso Windmi / GCHV monoblocks** (owner-verified register map, A/B/E port, slave 11) and one for **Midea M-Thermal OEMs** (Kaisai, Airwell, Ferroli, …; every FOR SERVICEMAN parameter). 📖 **[docs/modbus/README.md](https://github.com/Korkuttum/tuya_heat_pump/blob/main/docs/modbus/README.md)**
+
 ---
 
 ## Notes
