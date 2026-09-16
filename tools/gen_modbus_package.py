@@ -4,8 +4,9 @@ register map (installer / "FOR SERVICEMAN" parameters included).
 
 Why this exists
 ---------------
-Rotenso Windmi, Kaisai, Fisher, Airwell, Ferroli, Inventor ... are Midea
-M-Thermal OEMs. Their Tuya Wi-Fi module only exposes ~25 data points
+Kaisai, Airwell, Ferroli, Inventor, Kaysun, YORK ... sell Midea M-Thermal
+OEM units (NOT the Rotenso Windmi, which is a GCHV/Giwee unit -- see
+gen_gchv_package.py). Their Tuya Wi-Fi module only exposes ~25 data points
 (mode, setpoints, a handful of temperatures). The installer parameters --
 backup-heater enable/thresholds, DHW tank heater, double zone, weather
 curves, T4 limits, disinfection, holiday, pump delays -- are NOT in the
@@ -696,7 +697,8 @@ def build(r290: bool) -> dict:
 
 
 HEADER = """# ---------------------------------------------------------------------------
-# Midea M-Thermal (Rotenso Windmi / Kaisai / Fisher / Airwell / Ferroli ...)
+# Midea M-Thermal OEMs (Kaisai / Airwell / Ferroli / Inventor / Kaysun ...)
+# NOT for Rotenso Windmi (GCHV unit): use rotenso_windmi_gchv.yaml instead.
 # Modbus RTU package for Home Assistant -- GENERATED, do not edit by hand.
 #   generator : tools/gen_modbus_package.py {flag}
 #   registers : community map from Mosibi/Midea-heat-pump-ESPHome (Apache-2.0)

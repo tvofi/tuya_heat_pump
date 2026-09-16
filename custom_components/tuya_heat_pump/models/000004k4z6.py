@@ -2,16 +2,17 @@
 
 MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 # ====================================================
-# Rotenso Windmi (Midea M-Thermal OEM) @tvofi
+# Rotenso Windmi (GCHV / Giwee monoblock) @tvofi
 # modelId: 000004k4z6
 #
-# Rotenso Windmi units are re-badged Midea M-Thermal (Arctic/Nature
-# mono) heat pumps and use Midea's Tuya firmware. The very same DP set
-# (dp 1..109, identical codes and Chinese names) is exposed by other
-# Midea OEM brands -- e.g. the Fisher air-to-water unit documented in
-# make-all/tuya-local issue #1870 (modelId 0000021k4c). Tuya's own
-# Chinese DP names from that schema were used to correct several
-# labels that were guessed from the English codes alone:
+# Rotenso Windmi monoblocks (WIM40X1..WIM160X3) are built by GCHV
+# (Guangdong Carrier Heating, Ventilation & Air Conditioning, formerly
+# Chigo HVAC; brand "Giwee"), NOT by Midea, even though several of the
+# Tuya codes below re-use Midea-style sensor labels (T3, T4, T5, T1B, Tw2).
+# The same Tuya firmware (dp 1..109, identical codes and Chinese names)
+# is also found on the Fisher air-to-water unit documented in
+# make-all/tuya-local issue #1870 (modelId 0000021k4c). The Chinese DP
+# names from the device's own schema (issue #60 dump) are authoritative:
 #
 #   dp  code             Tuya name (zh)   meaning
 #   --  ---------------  ---------------  ----------------------------------
@@ -47,10 +48,11 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 # compressor discharge temperature (排气温度), not the DHW tank (which is
 # dp 26), and "T9" is the inverter module temperature.
 #
-# The schema contains exactly these 25 data points and no installer /
-# FOR SERVICEMAN parameters (backup heater, tank heater, double zone,
-# curves, T4 limits ...). Those are only reachable over the indoor
-# unit's Modbus port: see docs/modbus/README.md.
+# The schema contains exactly these 25 data points and no installer
+# parameters (backup heater, tank heater, double zone, curves, ambient
+# limits ...). Those are only reachable over the unit's Modbus RTU port
+# (A/B/E terminals, GCHV register table in the installation manual,
+# pages 122-123): see docs/modbus/README.md.
 #
 # Notes:
 #   - Tw2 (dp 114) and T1B (dp 116) return a -30 sentinel when the probe
@@ -62,8 +64,10 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #     temperature template. It is a load/demand level, not a metered
 #     electrical power, so it is exposed without a unit.
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
-#     are E0..E9, P0..P5. The meanings below follow Midea's M-Thermal
-#     error table; check the Rotenso manual if a code looks off.
+#     are E0..E9, P0..P5. The Fault Description sensor reports the codes
+#     only; look them up in the Windmi user manual's error table (the
+#     GCHV meanings differ from Midea's, e.g. P0 = IPM/IGBT over-current,
+#     P1 = phase loss).
 #   - timer (dp 16) is a raw DP that comes without a value field
 #     (handled safely by the coordinator). Register discovery exposes
 #     it as a disabled diagnostic sensor.
@@ -73,25 +77,12 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 
 _ON_VALUES = "value in [1, True, '1', 'true', 'on', 'yes', 'enable', 'open']"
 
-# Midea M-Thermal fault table (Tuya bitmap bit order: E0..E9, P0..P5).
-_FAULT_BITS = [
-    (1 << 0, "E0 water flow failure"),
-    (1 << 1, "E1 phase sequence error"),
-    (1 << 2, "E2 controller / hydraulic module communication error"),
-    (1 << 3, "E3 outlet water temp sensor T1 error"),
-    (1 << 4, "E4 DHW tank temp sensor T5 error"),
-    (1 << 5, "E5 outdoor coil temp sensor T3 error"),
-    (1 << 6, "E6 outdoor ambient temp sensor T4 error"),
-    (1 << 7, "E7 buffer tank sensor Tbt1 error"),
-    (1 << 8, "E8 water flow failure (3x)"),
-    (1 << 9, "E9 suction temp sensor Th error"),
-    (1 << 10, "P0 low pressure protection"),
-    (1 << 11, "P1 high pressure protection"),
-    (1 << 12, "P2 protection"),
-    (1 << 13, "P3 compressor over-current protection"),
-    (1 << 14, "P4 discharge temperature too high"),
-    (1 << 15, "P5 water inlet/outlet temperature difference too high"),
-]
+# Fault bitmap bit order from the Tuya schema: E0..E9, P0..P5 (codes only;
+# see the Windmi user manual for the meaning of each code).
+_FAULT_BITS = [(1 << i, label) for i, label in enumerate(
+    ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
+     "P0", "P1", "P2", "P3", "P4", "P5"]
+)]
 _FAULT_CONVERSION = (
     "', '.join(n for b, n in ["
     + ", ".join(f"({bit}, {label!r})" for bit, label in _FAULT_BITS)

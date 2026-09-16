@@ -1,5 +1,6 @@
 # ---------------------------------------------------------------------------
-# Midea M-Thermal (Rotenso Windmi / Kaisai / Fisher / Airwell / Ferroli ...)
+# Midea M-Thermal OEMs (Kaisai / Airwell / Ferroli / Inventor / Kaysun ...)
+# NOT for Rotenso Windmi (GCHV unit): use rotenso_windmi_gchv.yaml instead.
 # Modbus RTU package for Home Assistant -- GENERATED, do not edit by hand.
 #   generator : tools/gen_modbus_package.py 
 #   registers : community map from Mosibi/Midea-heat-pump-ESPHome (Apache-2.0)
