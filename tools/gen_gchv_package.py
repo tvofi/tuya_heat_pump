@@ -60,8 +60,28 @@ def raw_id(addr: int) -> str:
     return slug(f"{PREFIX} gchv r{addr}")
 
 
+def raw_name(addr: int, hexaddr: str) -> str:
+    return f"{PREFIX} GCHV R{addr} ({hexaddr})"
+
+
+# addr -> the name of the raw modbus sensor emitted for it, filled in by
+# raw_sensor() as each sensor is emitted. Home Assistant builds an entity_id
+# from the *name*, not from unique_id, so raw_entity() must slugify the name
+# that was actually emitted; deriving it from raw_id() instead yields
+# sensor.hp_gchv_r404 for a sensor that is really sensor.hp_gchv_r404_0194h.
+RAW_NAMES: dict[int, str] = {}
+
+
 def raw_entity(addr: int) -> str:
-    return "sensor." + raw_id(addr)
+    try:
+        name = RAW_NAMES[addr]
+    except KeyError:
+        raise RuntimeError(
+            f"raw_entity({addr}) called before a raw sensor was emitted for "
+            f"address {addr}; its entity_id cannot be derived. Emit the raw "
+            f"sensor first (RAW or ensure_raw)."
+        ) from None
+    return "sensor." + slug(name)
 
 
 def nice(name: str) -> str:
@@ -330,11 +350,14 @@ def write(addr: int, value_tpl: str) -> list[dict]:
 
 
 def raw_sensor(addr: int, hexaddr: str, dtype: str, scan: int, input_type: str = "holding") -> dict:
-    return {"name": f"{PREFIX} GCHV R{addr} ({hexaddr})", "unique_id": raw_id(addr), "slave": SLAVE,
+    name = raw_name(addr, hexaddr)
+    RAW_NAMES[addr] = name
+    return {"name": name, "unique_id": raw_id(addr), "slave": SLAVE,
             "address": addr, "input_type": input_type, "data_type": dtype, "scan_interval": scan}
 
 
 def build() -> dict:
+    RAW_NAMES.clear()
     sensors, t_sensors, t_binary, t_numbers, t_selects = [], [], [], [], []
     switches: dict[str, dict] = {}
     raw_defined: set[int] = set()
