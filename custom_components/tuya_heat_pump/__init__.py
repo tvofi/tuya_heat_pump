@@ -8,6 +8,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import TuyaScaleDataUpdateCoordinator
+from .services import async_setup_services, async_unload_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +50,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
             await coordinator.async_config_entry_first_refresh()
             _LOGGER.debug("İlk refresh tamamlandı (%.1fsn)", _elapsed())
+
+            # Live register discovery: now that we know both the device's
+            # schema and what it actually reports, expose every data
+            # point the model file left out (see discovery.py). Must run
+            # before the platforms are forwarded so they see the merged
+            # mapping.
+            coordinator.apply_discovery()
     except asyncio.TimeoutError as err:
         raise ConfigEntryNotReady(
             f"Tuya Heat Pump setup timed out after {SETUP_TIMEOUT}s "
@@ -56,6 +64,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    # Generic register read/write services (tuya_heat_pump.write_dp etc.),
+    # registered once for all entries.
+    async_setup_services(hass)
 
     # MQTT (tuya_sharing) — tamamen opsiyonel, bkz. sharing_mqtt.py.
     # Kullanıcı kurulumda User Code + QR onayı yapmadıysa (mevcut tüm
@@ -99,5 +111,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         hass.data[DOMAIN].pop(entry.entry_id)
+        if not hass.data[DOMAIN]:
+            async_unload_services(hass)
 
     return unload_ok

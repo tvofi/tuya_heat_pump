@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN
 from .conversion import Conversion
 from .coordinator import TuyaScaleDataUpdateCoordinator
+from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -113,7 +114,8 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
         self._attr_name = config.get('name', sensor_code)
         self._attr_device_class = config.get('device_class')
         self._attr_has_entity_name = True
-        
+        apply_common_entity_attrs(self, config)
+
         # Device info
         self._attr_device_info = coordinator.device_info
 
@@ -170,6 +172,7 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
         if self.coordinator.model_id:
             attrs["tuya_model_id"] = self.coordinator.model_id
 
+        attrs.update(common_extra_attrs(self._config))
         return attrs
 
     @property

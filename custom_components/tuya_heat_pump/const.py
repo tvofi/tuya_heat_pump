@@ -50,6 +50,20 @@ CONF_SHARING_TOKEN_INFO = "sharing_token_info"
 CONF_CACHED_ACCESS_TOKEN = "cached_access_token"
 CONF_CACHED_TOKEN_EXPIRES_AT = "cached_token_expires_at"
 
+# Cached copy of the device's Tuya "thing model" schema (every DP with
+# code, type, access mode, ranges, labels). Written next to
+# cached_model_id so that restarts do not need the cloud to know the
+# device's register map. See discovery.py.
+CONF_CACHED_MODEL_SCHEMA = "cached_model_schema"
+
+# Live register discovery: expose every data point the device reports
+# that the static model file does not cover (see discovery.py). Stored
+# in entry.options (options flow) and honoured from entry.data too for
+# the initial setup step. Default on: an unmapped register is useless,
+# a discovered one can always be disabled in the entity registry.
+CONF_AUTO_DISCOVERY = "auto_discovery"
+DEFAULT_AUTO_DISCOVERY = True
+
 # Herkese açık, home-assistant/core'un kendi resmi "tuya" entegrasyonunda
 # kullanılan paylaşılan kimlik bilgisi (bkz. homeassistant/components/
 # tuya/const.py) — Tuya'nın Home Assistant ekosistemi için ayırdığı

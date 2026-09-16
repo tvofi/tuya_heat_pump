@@ -19,6 +19,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import DOMAIN
 from .coordinator import TuyaScaleDataUpdateCoordinator
 from .raw_codec import resolve_raw_source, watch_pending_raw_entities
+from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -111,6 +112,7 @@ class TuyaHeatpumpText(TextEntity):
         # case a model file specifies something larger.
         self._attr_native_max = min(config.get('max_length', 255), 255)
         self._attr_has_entity_name = True
+        apply_common_entity_attrs(self, config)
 
         # Device info
         self._attr_device_info = coordinator.device_info
@@ -168,6 +170,7 @@ class TuyaHeatpumpText(TextEntity):
         if self.coordinator.model_id:
             attrs["tuya_model_id"] = self.coordinator.model_id
 
+        attrs.update(common_extra_attrs(self._config))
         return attrs
 
     @property

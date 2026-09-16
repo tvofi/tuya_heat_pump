@@ -30,7 +30,11 @@
                 "title": "Cloud Configuration",
                 "description": "Configure sensor refresh interval\n\nLower values = faster updates but more API calls",
                 "data": {
-                    "scan_interval": "Sensor Refresh Interval (minutes)"
+                    "scan_interval": "Sensor Refresh Interval (minutes)",
+                    "auto_discovery": "Auto-discover unmapped data points (expose every register the device reports)"
+                },
+                "data_description": {
+                    "auto_discovery": "When on, every data point the device reports that the model file does not cover is exposed as an extra entity (sensor, switch, number or select, based on the Tuya schema). Discovered entities carry a 'discovered' attribute; writable ones are shown under Configuration. Turn off to keep only the curated model entities."
                 }
             },
             "cloud_qr": {
@@ -63,7 +67,11 @@
                 "title": "Cloud Device Settings",
                 "description": "Configure sensor refresh interval\n\nLower values = faster updates but more API calls",
                 "data": {
-                    "scan_interval": "Sensor Refresh Interval (minutes)"
+                    "scan_interval": "Sensor Refresh Interval (minutes)",
+                    "auto_discovery": "Auto-discover unmapped data points (expose every register the device reports)"
+                },
+                "data_description": {
+                    "auto_discovery": "When on, every data point the device reports that the model file does not cover is exposed as an extra entity (sensor, switch, number or select, based on the Tuya schema). Discovered entities carry a 'discovered' attribute; writable ones are shown under Configuration. Turn off to keep only the curated model entities."
                 }
             },
             "local_options": {
@@ -72,7 +80,11 @@
                 "data": {
                     "ip": "Device IP Address",
                     "local_key": "Local Key",
-                    "protocol": "Protocol Version"
+                    "protocol": "Protocol Version",
+                    "auto_discovery": "Auto-discover unmapped data points (expose every register the device reports)"
+                },
+                "data_description": {
+                    "auto_discovery": "When on, every data point the device reports that the model file does not cover is exposed as an extra entity (sensor, switch, number or select, based on the Tuya schema). Discovered entities carry a 'discovered' attribute; writable ones are shown under Configuration. Turn off to keep only the curated model entities."
                 }
             }
         }
