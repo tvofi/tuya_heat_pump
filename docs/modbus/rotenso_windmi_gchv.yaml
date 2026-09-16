@@ -969,167 +969,167 @@ template:
 - sensor:
   - name: HP Night mode start time
     unique_id: hp_gchv_t518
-    availability: '{{ is_number(states(''sensor.hp_gchv_r518'')) }}'
-    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r518'') | int(0)) // 256, (states(''sensor.hp_gchv_r518'') | int(0)) % 256) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r518_0206h'')) }}'
+    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r518_0206h'') | int(0)) // 256, (states(''sensor.hp_gchv_r518_0206h'') | int(0)) % 256) }}'
   - name: HP Night mode end time
     unique_id: hp_gchv_t519
-    availability: '{{ is_number(states(''sensor.hp_gchv_r519'')) }}'
-    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r519'') | int(0)) // 256, (states(''sensor.hp_gchv_r519'') | int(0)) % 256) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r519_0207h'')) }}'
+    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r519_0207h'') | int(0)) // 256, (states(''sensor.hp_gchv_r519_0207h'') | int(0)) % 256) }}'
   - name: HP DHW schedule start time
     unique_id: hp_gchv_t712
-    availability: '{{ is_number(states(''sensor.hp_gchv_r712'')) }}'
-    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r712'') | int(0)) // 256, (states(''sensor.hp_gchv_r712'') | int(0)) % 256) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r712_02c8h'')) }}'
+    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r712_02c8h'') | int(0)) // 256, (states(''sensor.hp_gchv_r712_02c8h'') | int(0)) % 256) }}'
   - name: HP DHW schedule stop time
     unique_id: hp_gchv_t713
-    availability: '{{ is_number(states(''sensor.hp_gchv_r713'')) }}'
-    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r713'') | int(0)) // 256, (states(''sensor.hp_gchv_r713'') | int(0)) % 256) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r713_02c9h'')) }}'
+    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r713_02c9h'') | int(0)) // 256, (states(''sensor.hp_gchv_r713_02c9h'') | int(0)) % 256) }}'
   - name: HP Anti-legionella schedule start time
     unique_id: hp_gchv_t715
-    availability: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
-    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r715'') | int(0)) // 256, (states(''sensor.hp_gchv_r715'') | int(0)) % 256) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r715_02cbh'')) }}'
+    state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r715_02cbh'') | int(0)) // 256, (states(''sensor.hp_gchv_r715_02cbh'') | int(0)) % 256) }}'
   - name: HP Running mode
     unique_id: hp_running_mode
-    availability: '{{ is_number(states(''sensor.hp_gchv_r45'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r45'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool'', 2: ''Heat'', 4: ''DHW'', 7: ''Defrost'', 20: ''Home anti-freeze (unit protection)''} %}{{ m[v] if
-      v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r45_002dh'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r45_002dh'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool'', 2: ''Heat'', 4: ''DHW'', 7: ''Defrost'', 20: ''Home anti-freeze (unit protection)''} %}{{ m[v]
+      if v in m else ''Unknown '' ~ v }}'
   - name: HP Normal / Eco status
     unique_id: hp_normal_eco_status
-    availability: '{{ is_number(states(''sensor.hp_gchv_r103'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r103'') | int(0)) %}{% set m = {0: ''Normal'', 1: ''Eco''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r103_0067h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r103_0067h'') | int(0)) %}{% set m = {0: ''Normal'', 1: ''Eco''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
   - name: HP DHW mode
     unique_id: hp_dhw_mode
-    availability: '{{ is_number(states(''sensor.hp_gchv_r201'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r201'') | int(0)) %}{% set m = {0: ''Eco'', 1: ''Anti-legionella'', 2: ''Regular''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r201_00c9h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r201_00c9h'') | int(0)) %}{% set m = {0: ''Eco'', 1: ''Anti-legionella'', 2: ''Regular''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
   - name: HP P6 (IPM protection) reason
     unique_id: hp_p6_ipm_protection_reason
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4130'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4130'') | int(0)) %}{% set m = {0: ''None'', 10: ''IPM error'', 1: ''DC voltage too low'', 2: ''DC voltage too high'', 4: ''MCE error / synchronisation /
-      closed loop'', 5: ''Compressor speed fault'', 7: ''Phase error'', 8: ''Compressor speed changing fault'', 9: ''Compressor speed incorrect''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4130_1022h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4130_1022h'') | int(0)) %}{% set m = {0: ''None'', 10: ''IPM error'', 1: ''DC voltage too low'', 2: ''DC voltage too high'', 4: ''MCE error / synchronisation
+      / closed loop'', 5: ''Compressor speed fault'', 7: ''Phase error'', 8: ''Compressor speed changing fault'', 9: ''Compressor speed incorrect''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
   - name: HP Modbus parity
     unique_id: hp_modbus_parity
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4146'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4146'') | int(0)) %}{% set m = {0: ''None'', 1: ''Odd'', 2: ''Even''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4146_1032h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4146_1032h'') | int(0)) %}{% set m = {0: ''None'', 1: ''Odd'', 2: ''Even''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
   - name: HP Compressor frequency limitation reason 1
     unique_id: hp_compressor_frequency_limitation_reason_1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4121'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4121'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''T3B ODU coil''), (2, ''T4''), (4, ''T5''), (8, ''Voltage''), (16, ''Current''), (32,
-      ''T9''), (64, ''Night mode''), (128, ''LWT'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''None'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4121_1019h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4121_1019h'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''T3B ODU coil''), (2, ''T4''), (4, ''T5''), (8, ''Voltage''), (16, ''Current''),
+      (32, ''T9''), (64, ''Night mode''), (128, ''LWT'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''None'' }}'
   - name: HP Compressor frequency limitation reason 2
     unique_id: hp_compressor_frequency_limitation_reason_2
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4133'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4133'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''LWT/EWT tolerance''), (2, ''Heating SH3''), (4, ''T4 lowest frequency''), (8, ''Cooling
-      T2B'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''None'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4133_1025h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4133_1025h'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''LWT/EWT tolerance''), (2, ''Heating SH3''), (4, ''T4 lowest frequency''), (8,
+      ''Cooling T2B'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''None'' }}'
   - name: HP Alarm bitmap 1
     unique_id: hp_alarm_bitmap_1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4105'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4105'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Water flow switch fail''), (2, ''Comm fail ODU - hydraulic PCB''), (4, ''LWT sensor
-      after EH fail''), (8, ''BPHE outlet refrigerant sensor fail''), (16, ''BPHE inlet refrigerant sensor fail''), (32, ''ODU fail''), (64, ''DHW tank sensor fail''), (128, ''EWT of BPHE sensor fail''),
-      (256, ''LWT of BPHE sensor fail''), (512, ''Comm fail wired controller - PCB''), (1024, ''Bi-zone sensor fail''), (2048, ''Auxiliary heat LWT sensor fail'')] %}{% if v | bitwise_and(b) %}{% set ns.r
-      = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4105_1009h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4105_1009h'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Water flow switch fail''), (2, ''Comm fail ODU - hydraulic PCB''), (4, ''LWT
+      sensor after EH fail''), (8, ''BPHE outlet refrigerant sensor fail''), (16, ''BPHE inlet refrigerant sensor fail''), (32, ''ODU fail''), (64, ''DHW tank sensor fail''), (128, ''EWT of BPHE sensor
+      fail''), (256, ''LWT of BPHE sensor fail''), (512, ''Comm fail wired controller - PCB''), (1024, ''Bi-zone sensor fail''), (2048, ''Auxiliary heat LWT sensor fail'')] %}{% if v | bitwise_and(b) %}{%
+      set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK'' }}'
   - name: HP Alarm bitmap 2
     unique_id: hp_alarm_bitmap_2
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4106'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4106'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(2, ''Temperature difference EWT/LWT too high''), (4, ''Water flow rate shortage''), (8,
-      ''Temperature difference WT/LWT abnormal''), (64, ''EH feedback protect'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK''
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4106_100ah'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4106_100ah'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(2, ''Temperature difference EWT/LWT too high''), (4, ''Water flow rate shortage''),
+      (8, ''Temperature difference WT/LWT abnormal''), (64, ''EH feedback protect'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK''
       }}'
   - name: HP Alarm bitmap 3
     unique_id: hp_alarm_bitmap_3
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4107'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4107'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Condenser sensor fail''), (2, ''Discharge temp sensor fail''), (8, ''BPHE outlet
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4107_100bh'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4107_100bh'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Condenser sensor fail''), (2, ''Discharge temp sensor fail''), (8, ''BPHE outlet
       refrigerant high temp protection''), (16, ''P6 error 3 times in 30 min''), (32, ''AC voltage abnormal''), (64, ''OAT sensor fail''), (128, ''Over current protection''), (256, ''IPM protection (P6)''),
       (512, ''3x high discharge temp in 100 min (H6)''), (1024, ''3x IPM high temp in 60 min (H12)''), (2048, ''EEPROM alarm (E10)''), (4096, ''High pressure protection (P1)''), (8192, ''3x low pressure
       in 30 min (H5)''), (16384, ''2x DC fan motor alarm in 10 min (H9)''), (32768, ''Condenser temp too high (P5)'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r
       | join('', '') if ns.r else ''OK'' }}'
   - name: HP Alarm bitmap 4
     unique_id: hp_alarm_bitmap_4
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4108'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4108'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Comm fail IDU - ODU (E2)''), (2, ''ODU fan motor error (P9)''), (4, ''IPM temp too
-      high (Pb)''), (8, ''IDU quantity decrease (H7)''), (16, ''3x over current in 60 min (H10)''), (32, ''Discharge sensor fail (P4)''), (64, ''Refrigerant cool pipe sensor fail (Ec)''), (128, ''Low pressure
-      protection (P2)'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4108_100ch'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4108_100ch'') | int(0)) %}{% set ns = namespace(r=[]) %}{% for b, n in [(1, ''Comm fail IDU - ODU (E2)''), (2, ''ODU fan motor error (P9)''), (4, ''IPM temp
+      too high (Pb)''), (8, ''IDU quantity decrease (H7)''), (16, ''3x over current in 60 min (H10)''), (32, ''Discharge sensor fail (P4)''), (64, ''Refrigerant cool pipe sensor fail (Ec)''), (128, ''Low
+      pressure protection (P2)'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK'' }}'
 - binary_sensor:
   - name: HP Night mode (frequency reduction) active
     unique_id: hp_night_mode_frequency_reduction_active
-    availability: '{{ is_number(states(''sensor.hp_gchv_r68'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r68'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r68_0044h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r68_0044h'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP Flow switch closed
     unique_id: hp_flow_switch_closed
-    availability: '{{ is_number(states(''sensor.hp_gchv_r105'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r105'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r105_0069h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r105_0069h'') | int(0)) | bitwise_and(1) > 0 }}'
     device_class: opening
   - name: HP Discrete input 5 closed
     unique_id: hp_discrete_input_5_closed
-    availability: '{{ is_number(states(''sensor.hp_gchv_r106'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r106'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r106_006ah'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r106_006ah'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP Discrete input 6 closed
     unique_id: hp_discrete_input_6_closed
-    availability: '{{ is_number(states(''sensor.hp_gchv_r107'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r107'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r107_006bh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r107_006bh'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP Discrete input 7 closed
     unique_id: hp_discrete_input_7_closed
-    availability: '{{ is_number(states(''sensor.hp_gchv_r108'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r108'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r108_006ch'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r108_006ch'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP Discrete input 8 closed
     unique_id: hp_discrete_input_8_closed
-    availability: '{{ is_number(states(''sensor.hp_gchv_r109'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r109'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r109_006dh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r109_006dh'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP DHW valve on
     unique_id: hp_dhw_valve_on
-    availability: '{{ is_number(states(''sensor.hp_gchv_r210'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r210'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r210_00d2h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r210_00d2h'') | int(0)) | bitwise_and(1) > 0 }}'
     device_class: opening
   - name: 'HP ODU output: AC fan motor high'
     unique_id: hp_odu_output_ac_fan_motor_high
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(1) > 0 }}'
     device_class: running
   - name: 'HP ODU output: AC fan motor low'
     unique_id: hp_odu_output_ac_fan_motor_low
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(2) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(2) > 0 }}'
     device_class: running
   - name: 'HP ODU output: compressor heater'
     unique_id: hp_odu_output_compressor_heater
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(4) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(4) > 0 }}'
     device_class: heat
   - name: 'HP ODU output: chassis heater'
     unique_id: hp_odu_output_chassis_heater
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(8) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(8) > 0 }}'
     device_class: heat
   - name: 'HP ODU output: power PTC'
     unique_id: hp_odu_output_power_ptc
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(16) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(16) > 0 }}'
     device_class: power
   - name: 'HP ODU output: SV1'
     unique_id: hp_odu_output_sv1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(32) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(32) > 0 }}'
   - name: 'HP ODU output: 4-way valve'
     unique_id: hp_odu_output_4_way_valve
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(64) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(64) > 0 }}'
   - name: 'HP ODU output: SV2'
     unique_id: hp_odu_output_sv2
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4110'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4110'') | int(0)) | bitwise_and(128) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4110_100eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4110_100eh'') | int(0)) | bitwise_and(128) > 0 }}'
   - name: HP Low pressure switch
     unique_id: hp_low_pressure_switch
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4127'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4127'') | int(0)) | bitwise_and(1) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4127_101fh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4127_101fh'') | int(0)) | bitwise_and(1) > 0 }}'
     device_class: problem
   - name: HP High pressure switch
     unique_id: hp_high_pressure_switch
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4127'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r4127'') | int(0)) | bitwise_and(2) > 0 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4127_101fh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r4127_101fh'') | int(0)) | bitwise_and(2) > 0 }}'
     device_class: problem
   - name: HP Alarm
     unique_id: hp_alarm
     device_class: problem
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4105'')) and is_number(states(''sensor.hp_gchv_r4106'')) and is_number(states(''sensor.hp_gchv_r4107'')) and is_number(states(''sensor.hp_gchv_r4108''))
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4105_1009h'')) and is_number(states(''sensor.hp_gchv_r4106_100ah'')) and is_number(states(''sensor.hp_gchv_r4107_100bh'')) and is_number(states(''sensor.hp_gchv_r4108_100ch''))
       }}'
-    state: '{{ (states(''sensor.hp_gchv_r4105'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4106'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4107'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4108'')
+    state: '{{ (states(''sensor.hp_gchv_r4105_1009h'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4106_100ah'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4107_100bh'') | int(0)) > 0 or (states(''sensor.hp_gchv_r4108_100ch'')
       | int(0)) > 0 }}'
 - number:
   - name: HP Water control point (°C)
@@ -1137,8 +1137,8 @@ template:
     min: 5
     max: 63
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r51'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r51'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r51_0033h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r51_0033h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1148,14 +1148,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r51
+        entity_id: sensor.hp_gchv_r51_0033h
   - name: HP Occupied heating water setpoint (°C)
     unique_id: hp_gchv_w401
     min: 25
     max: 63
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r401'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r401'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r401_0191h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r401_0191h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1165,14 +1165,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r401
+        entity_id: sensor.hp_gchv_r401_0191h
   - name: HP Unoccupied heating water setpoint offset (°C)
     unique_id: hp_gchv_w402
     min: -20
     max: 0
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r402'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r402'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r402_0192h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r402_0192h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1182,14 +1182,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r402
+        entity_id: sensor.hp_gchv_r402_0192h
   - name: HP Economic heating water setpoint offset (°C)
     unique_id: hp_gchv_w403
     min: -20
     max: 0
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r403'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r403'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r403_0193h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r403_0193h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1199,14 +1199,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r403
+        entity_id: sensor.hp_gchv_r403_0193h
   - name: HP DHW normal setpoint (°C)
     unique_id: hp_gchv_w404
     min: 40
     max: 63
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r404'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r404'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r404_0194h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r404_0194h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1216,14 +1216,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r404
+        entity_id: sensor.hp_gchv_r404_0194h
   - name: HP DHW anti-legionella setpoint (°C)
     unique_id: hp_gchv_w405
     min: 60
     max: 70
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r405'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r405'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r405_0195h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r405_0195h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1233,14 +1233,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r405
+        entity_id: sensor.hp_gchv_r405_0195h
   - name: HP DHW economic setpoint (°C)
     unique_id: hp_gchv_w406
     min: 40
     max: 63
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r406'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r406'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r406_0196h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r406_0196h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1250,14 +1250,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r406
+        entity_id: sensor.hp_gchv_r406_0196h
   - name: HP Occupied cooling water setpoint (°C)
     unique_id: hp_gchv_w407
     min: 5
     max: 25
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r407'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r407'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r407_0197h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r407_0197h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1267,14 +1267,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r407
+        entity_id: sensor.hp_gchv_r407_0197h
   - name: HP Unoccupied cooling water setpoint offset (°C)
     unique_id: hp_gchv_w408
     min: 0
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r408'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r408'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r408_0198h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r408_0198h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1284,14 +1284,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r408
+        entity_id: sensor.hp_gchv_r408_0198h
   - name: HP Economic cooling water setpoint offset (°C)
     unique_id: hp_gchv_w409
     min: 0
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r409'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r409'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r409_0199h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r409_0199h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1301,14 +1301,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r409
+        entity_id: sensor.hp_gchv_r409_0199h
   - name: HP Heating climatic curve max setpoint offset (°C)
     unique_id: hp_gchv_w412
     min: -5
     max: 5
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r412'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r412'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r412_019ch'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r412_019ch'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1318,14 +1318,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r412
+        entity_id: sensor.hp_gchv_r412_019ch
   - name: HP Cooling climatic curve min setpoint offset (°C)
     unique_id: hp_gchv_w413
     min: -5
     max: 5
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r413'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r413'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r413_019dh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r413_019dh'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1335,14 +1335,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r413
+        entity_id: sensor.hp_gchv_r413_019dh
   - name: HP Occupied heating air setpoint (°C)
     unique_id: hp_gchv_w421
     min: 16
     max: 32
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r421'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r421'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r421_01a5h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r421_01a5h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1352,14 +1352,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r421
+        entity_id: sensor.hp_gchv_r421_01a5h
   - name: HP Unoccupied heating air setpoint offset (°C)
     unique_id: hp_gchv_w422
     min: -20
     max: 0
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r422'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r422'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r422_01a6h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r422_01a6h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1369,14 +1369,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r422
+        entity_id: sensor.hp_gchv_r422_01a6h
   - name: HP Economic heating air setpoint offset (°C)
     unique_id: hp_gchv_w423
     min: -20
     max: 0
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r423'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r423'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r423_01a7h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r423_01a7h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1386,14 +1386,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r423
+        entity_id: sensor.hp_gchv_r423_01a7h
   - name: HP Occupied cooling air setpoint (°C)
     unique_id: hp_gchv_w424
     min: 16
     max: 32
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r424'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r424'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r424_01a8h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r424_01a8h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1403,14 +1403,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r424
+        entity_id: sensor.hp_gchv_r424_01a8h
   - name: HP Unoccupied cooling air setpoint offset (°C)
     unique_id: hp_gchv_w425
     min: 0
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r425'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r425'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r425_01a9h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r425_01a9h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1420,14 +1420,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r425
+        entity_id: sensor.hp_gchv_r425_01a9h
   - name: HP Economic cooling air setpoint offset (°C)
     unique_id: hp_gchv_w426
     min: 0
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r426'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r426'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r426_01aah'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r426_01aah'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1437,14 +1437,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r426
+        entity_id: sensor.hp_gchv_r426_01aah
   - name: HP Minimum OAT for heating with compressor (°C)
     unique_id: hp_gchv_w514
     min: -26
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r514'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r514'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r514_0202h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r514_0202h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1454,14 +1454,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r514
+        entity_id: sensor.hp_gchv_r514_0202h
   - name: HP Water delta T setpoint (°C)
     unique_id: hp_gchv_w569
     min: 3.5
     max: 20
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r569'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r569'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r569_0239h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r569_0239h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1471,14 +1471,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r569
+        entity_id: sensor.hp_gchv_r569_0239h
   - name: HP Custom heating curve min OAT (°C)
     unique_id: hp_gchv_w582
     min: -30
     max: 10
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r582'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r582'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r582_0246h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r582_0246h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1488,14 +1488,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r582
+        entity_id: sensor.hp_gchv_r582_0246h
   - name: HP Custom heating curve max OAT (°C)
     unique_id: hp_gchv_w583
     min: 10
     max: 30
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r583'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r583'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r583_0247h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r583_0247h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1505,14 +1505,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r583
+        entity_id: sensor.hp_gchv_r583_0247h
   - name: HP Custom heating curve min LWT (°C)
     unique_id: hp_gchv_w584
     min: 25
     max: 40
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r584'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r584'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r584_0248h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r584_0248h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1522,14 +1522,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r584
+        entity_id: sensor.hp_gchv_r584_0248h
   - name: HP Custom heating curve max LWT (°C)
     unique_id: hp_gchv_w585
     min: 30
     max: 60
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r585'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r585'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r585_0249h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r585_0249h'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1539,14 +1539,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r585
+        entity_id: sensor.hp_gchv_r585_0249h
   - name: HP Custom cooling curve min OAT (°C)
     unique_id: hp_gchv_w587
     min: 0
     max: 30
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r587'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r587'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r587_024bh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r587_024bh'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1556,14 +1556,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r587
+        entity_id: sensor.hp_gchv_r587_024bh
   - name: HP Custom cooling curve max OAT (°C)
     unique_id: hp_gchv_w588
     min: 24
     max: 50
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r588'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r588'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r588_024ch'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r588_024ch'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1573,14 +1573,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r588
+        entity_id: sensor.hp_gchv_r588_024ch
   - name: HP Custom cooling curve min LWT (°C)
     unique_id: hp_gchv_w589
     min: 5
     max: 20
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r589'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r589'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r589_024dh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r589_024dh'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1590,14 +1590,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r589
+        entity_id: sensor.hp_gchv_r589_024dh
   - name: HP Custom cooling curve max LWT (°C)
     unique_id: hp_gchv_w590
     min: 5
     max: 20
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r590'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r590'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r590_024eh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r590_024eh'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1607,14 +1607,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r590
+        entity_id: sensor.hp_gchv_r590_024eh
   - name: HP Warm-up time (min)
     unique_id: hp_gchv_w602
     min: 0
     max: 60
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r602'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r602'') | int(0)) }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r602_025ah'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r602_025ah'') | int(0)) }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1624,14 +1624,14 @@ template:
         value: '{{ (value | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r602
+        entity_id: sensor.hp_gchv_r602_025ah
   - name: HP Booster delta temperature (°C)
     unique_id: hp_gchv_w603
     min: 1
     max: 20
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r603'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r603'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r603_025bh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r603_025bh'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1641,14 +1641,14 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r603
+        entity_id: sensor.hp_gchv_r603_025bh
   - name: HP Booster OAT threshold (°C)
     unique_id: hp_gchv_w604
     min: -20
     max: 15
     step: 0.5
-    availability: '{{ is_number(states(''sensor.hp_gchv_r604'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r604'') | int(0)) * 0.1 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r604_025ch'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r604_025ch'') | int(0)) * 0.1 }}'
     set_value:
     - service: modbus.write_register
       data:
@@ -1658,203 +1658,203 @@ template:
         value: '{{ (((value | float) / 0.1) | round | int) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r604
+        entity_id: sensor.hp_gchv_r604_025ch
   - name: HP Night mode start hour
     unique_id: hp_gchv_w518_hour
     min: 0
     max: 23
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r518'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r518'') | int(0)) // 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r518_0206h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r518_0206h'') | int(0)) // 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r518'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r518_0206h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 518
-        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r518'') | int(0)) % 256) }}'
+        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r518_0206h'') | int(0)) % 256) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r518
+        entity_id: sensor.hp_gchv_r518_0206h
   - name: HP Night mode start minute
     unique_id: hp_gchv_w518_minute
     min: 0
     max: 59
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r518'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r518'') | int(0)) % 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r518_0206h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r518_0206h'') | int(0)) % 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r518'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r518_0206h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 518
-        value: '{{ ((states(''sensor.hp_gchv_r518'') | int(0)) // 256) * 256 + (value | int) }}'
+        value: '{{ ((states(''sensor.hp_gchv_r518_0206h'') | int(0)) // 256) * 256 + (value | int) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r518
+        entity_id: sensor.hp_gchv_r518_0206h
   - name: HP Night mode end hour
     unique_id: hp_gchv_w519_hour
     min: 0
     max: 23
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r519'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r519'') | int(0)) // 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r519_0207h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r519_0207h'') | int(0)) // 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r519'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r519_0207h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 519
-        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r519'') | int(0)) % 256) }}'
+        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r519_0207h'') | int(0)) % 256) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r519
+        entity_id: sensor.hp_gchv_r519_0207h
   - name: HP Night mode end minute
     unique_id: hp_gchv_w519_minute
     min: 0
     max: 59
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r519'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r519'') | int(0)) % 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r519_0207h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r519_0207h'') | int(0)) % 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r519'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r519_0207h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 519
-        value: '{{ ((states(''sensor.hp_gchv_r519'') | int(0)) // 256) * 256 + (value | int) }}'
+        value: '{{ ((states(''sensor.hp_gchv_r519_0207h'') | int(0)) // 256) * 256 + (value | int) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r519
+        entity_id: sensor.hp_gchv_r519_0207h
   - name: HP DHW schedule start hour
     unique_id: hp_gchv_w712_hour
     min: 0
     max: 23
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r712'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r712'') | int(0)) // 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r712_02c8h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r712_02c8h'') | int(0)) // 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r712'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r712_02c8h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 712
-        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r712'') | int(0)) % 256) }}'
+        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r712_02c8h'') | int(0)) % 256) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r712
+        entity_id: sensor.hp_gchv_r712_02c8h
   - name: HP DHW schedule start minute
     unique_id: hp_gchv_w712_minute
     min: 0
     max: 59
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r712'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r712'') | int(0)) % 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r712_02c8h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r712_02c8h'') | int(0)) % 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r712'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r712_02c8h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 712
-        value: '{{ ((states(''sensor.hp_gchv_r712'') | int(0)) // 256) * 256 + (value | int) }}'
+        value: '{{ ((states(''sensor.hp_gchv_r712_02c8h'') | int(0)) // 256) * 256 + (value | int) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r712
+        entity_id: sensor.hp_gchv_r712_02c8h
   - name: HP DHW schedule stop hour
     unique_id: hp_gchv_w713_hour
     min: 0
     max: 23
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r713'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r713'') | int(0)) // 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r713_02c9h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r713_02c9h'') | int(0)) // 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r713'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r713_02c9h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 713
-        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r713'') | int(0)) % 256) }}'
+        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r713_02c9h'') | int(0)) % 256) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r713
+        entity_id: sensor.hp_gchv_r713_02c9h
   - name: HP DHW schedule stop minute
     unique_id: hp_gchv_w713_minute
     min: 0
     max: 59
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r713'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r713'') | int(0)) % 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r713_02c9h'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r713_02c9h'') | int(0)) % 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r713'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r713_02c9h'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 713
-        value: '{{ ((states(''sensor.hp_gchv_r713'') | int(0)) // 256) * 256 + (value | int) }}'
+        value: '{{ ((states(''sensor.hp_gchv_r713_02c9h'') | int(0)) // 256) * 256 + (value | int) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r713
+        entity_id: sensor.hp_gchv_r713_02c9h
   - name: HP Anti-legionella schedule start hour
     unique_id: hp_gchv_w715_hour
     min: 0
     max: 23
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r715'') | int(0)) // 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r715_02cbh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r715_02cbh'') | int(0)) // 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r715_02cbh'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 715
-        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r715'') | int(0)) % 256) }}'
+        value: '{{ (value | int) * 256 + ((states(''sensor.hp_gchv_r715_02cbh'') | int(0)) % 256) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r715
+        entity_id: sensor.hp_gchv_r715_02cbh
   - name: HP Anti-legionella schedule start minute
     unique_id: hp_gchv_w715_minute
     min: 0
     max: 59
     step: 1
-    availability: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r715'') | int(0)) % 256 }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r715_02cbh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r715_02cbh'') | int(0)) % 256 }}'
     set_value:
     - condition: template
-      value_template: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
+      value_template: '{{ is_number(states(''sensor.hp_gchv_r715_02cbh'')) }}'
     - service: modbus.write_register
       data:
         hub: heatpump
         slave: 11
         address: 715
-        value: '{{ ((states(''sensor.hp_gchv_r715'') | int(0)) // 256) * 256 + (value | int) }}'
+        value: '{{ ((states(''sensor.hp_gchv_r715_02cbh'') | int(0)) // 256) * 256 + (value | int) }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r715
+        entity_id: sensor.hp_gchv_r715_02cbh
 - select:
   - name: HP Setting mode
     unique_id: hp_gchv_w44
     options: '{{ [''Off'', ''Cool + DHW'', ''Heat + DHW''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r44'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r44'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool + DHW'', 2: ''Heat + DHW''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r44_002ch'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r44_002ch'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool + DHW'', 2: ''Heat + DHW''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -1864,12 +1864,12 @@ template:
         value: '{{ ({''Off'': 0, ''Cool + DHW'': 1, ''Heat + DHW'': 2}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r44
+        entity_id: sensor.hp_gchv_r44_002ch
   - name: HP Occupancy mode
     unique_id: hp_gchv_w41
     options: '{{ [''Away'', ''Sleep'', ''Home''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r41'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r41'') | int(0)) %}{% set m = {0: ''Away'', 1: ''Sleep'', 2: ''Home''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r41_0029h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r41_0029h'') | int(0)) %}{% set m = {0: ''Away'', 1: ''Sleep'', 2: ''Home''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -1879,12 +1879,12 @@ template:
         value: '{{ ({''Away'': 0, ''Sleep'': 1, ''Home'': 2}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r41
+        entity_id: sensor.hp_gchv_r41_0029h
   - name: HP User interface type
     unique_id: hp_gchv_w521
     options: '{{ [''Dry contacts (on/off, home/away, mode)'', ''Wired controller''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r521'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r521'') | int(0)) %}{% set m = {1: ''Dry contacts (on/off, home/away, mode)'', 2: ''Wired controller''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r521_0209h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r521_0209h'') | int(0)) %}{% set m = {1: ''Dry contacts (on/off, home/away, mode)'', 2: ''Wired controller''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -1894,14 +1894,14 @@ template:
         value: '{{ ({''Dry contacts (on/off, home/away, mode)'': 1, ''Wired controller'': 2}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r521
+        entity_id: sensor.hp_gchv_r521_0209h
   - name: HP Heating climatic curve
     unique_id: hp_gchv_w581
     options: '{{ [''No curve (fixed setpoint)'', ''Custom curve'', ''Curve 1'', ''Curve 2'', ''Curve 3'', ''Curve 4'', ''Curve 5'', ''Curve 6'', ''Curve 7'', ''Curve 8'', ''Curve 9'', ''Curve 10'', ''Curve
       11'', ''Curve 12''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r581'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r581'') | int(0)) %}{% set m = {-1: ''No curve (fixed setpoint)'', 0: ''Custom curve'', 1: ''Curve 1'', 2: ''Curve 2'', 3: ''Curve 3'', 4: ''Curve 4'', 5:
-      ''Curve 5'', 6: ''Curve 6'', 7: ''Curve 7'', 8: ''Curve 8'', 9: ''Curve 9'', 10: ''Curve 10'', 11: ''Curve 11'', 12: ''Curve 12''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r581_0245h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r581_0245h'') | int(0)) %}{% set m = {-1: ''No curve (fixed setpoint)'', 0: ''Custom curve'', 1: ''Curve 1'', 2: ''Curve 2'', 3: ''Curve 3'', 4: ''Curve 4'',
+      5: ''Curve 5'', 6: ''Curve 6'', 7: ''Curve 7'', 8: ''Curve 8'', 9: ''Curve 9'', 10: ''Curve 10'', 11: ''Curve 11'', 12: ''Curve 12''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -1912,12 +1912,12 @@ template:
           8, ''Curve 9'': 9, ''Curve 10'': 10, ''Curve 11'': 11, ''Curve 12'': 12}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r581
+        entity_id: sensor.hp_gchv_r581_0245h
   - name: HP Cooling climatic curve
     unique_id: hp_gchv_w586
     options: '{{ [''No curve (fixed setpoint)'', ''Custom curve'', ''Curve 1'', ''Curve 2''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r586'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r586'') | int(0)) %}{% set m = {-1: ''No curve (fixed setpoint)'', 0: ''Custom curve'', 1: ''Curve 1'', 2: ''Curve 2''} %}{{ m[v] if v in m else ''Unknown''
+    availability: '{{ is_number(states(''sensor.hp_gchv_r586_024ah'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r586_024ah'') | int(0)) %}{% set m = {-1: ''No curve (fixed setpoint)'', 0: ''Custom curve'', 1: ''Curve 1'', 2: ''Curve 2''} %}{{ m[v] if v in m else ''Unknown''
       }}'
     select_option:
     - service: modbus.write_register
@@ -1928,12 +1928,12 @@ template:
         value: '{{ ({''No curve (fixed setpoint)'': -1, ''Custom curve'': 0, ''Curve 1'': 1, ''Curve 2'': 2}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r586
+        entity_id: sensor.hp_gchv_r586_024ah
   - name: HP Backup heater type
     unique_id: hp_gchv_w601
     options: '{{ [''Inner EH + DHW EH + gas boiler'', ''Inner EH + DHW EH'', ''DHW EH + gas boiler'', ''Inner EH + gas boiler'', ''DHW EH'', ''Gas boiler'', ''Inner EH'', ''No auxiliary heater''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r601'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r601'') | int(0)) %}{% set m = {0: ''Inner EH + DHW EH + gas boiler'', 1: ''Inner EH + DHW EH'', 2: ''DHW EH + gas boiler'', 3: ''Inner EH + gas boiler'',
+    availability: '{{ is_number(states(''sensor.hp_gchv_r601_0259h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r601_0259h'') | int(0)) %}{% set m = {0: ''Inner EH + DHW EH + gas boiler'', 1: ''Inner EH + DHW EH'', 2: ''DHW EH + gas boiler'', 3: ''Inner EH + gas boiler'',
       4: ''DHW EH'', 5: ''Gas boiler'', 6: ''Inner EH'', 7: ''No auxiliary heater''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
@@ -1945,12 +1945,12 @@ template:
           heater'': 7}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r601
+        entity_id: sensor.hp_gchv_r601_0259h
   - name: HP Control mode
     unique_id: hp_gchv_w4109
     options: '{{ [''Water temperature control'', ''Ambient temperature control''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r4109'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r4109'') | int(0)) %}{% set m = {0: ''Water temperature control'', 1: ''Ambient temperature control''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r4109_100dh'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r4109_100dh'') | int(0)) %}{% set m = {0: ''Water temperature control'', 1: ''Ambient temperature control''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -1960,12 +1960,12 @@ template:
         value: '{{ ({''Water temperature control'': 0, ''Ambient temperature control'': 1}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r4109
+        entity_id: sensor.hp_gchv_r4109_100dh
   - name: HP Discrete input 5 function
     unique_id: hp_gchv_w502
     options: '{{ [''Disabled'', ''Power limitation (night mode)'', ''Load shed'', ''Anti-legionella request'', ''DHW request'', ''DHW priority''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r502'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r502'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
+    availability: '{{ is_number(states(''sensor.hp_gchv_r502_01f6h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r502_01f6h'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
       5: ''DHW priority''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
@@ -1976,12 +1976,12 @@ template:
         value: '{{ ({''Disabled'': 0, ''Power limitation (night mode)'': 1, ''Load shed'': 2, ''Anti-legionella request'': 3, ''DHW request'': 4, ''DHW priority'': 5}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r502
+        entity_id: sensor.hp_gchv_r502_01f6h
   - name: HP Discrete input 6 function
     unique_id: hp_gchv_w503
     options: '{{ [''Disabled'', ''Power limitation (night mode)'', ''Load shed'', ''Anti-legionella request'', ''DHW request'', ''DHW priority''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r503'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r503'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
+    availability: '{{ is_number(states(''sensor.hp_gchv_r503_01f7h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r503_01f7h'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
       5: ''DHW priority''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
@@ -1992,12 +1992,12 @@ template:
         value: '{{ ({''Disabled'': 0, ''Power limitation (night mode)'': 1, ''Load shed'': 2, ''Anti-legionella request'': 3, ''DHW request'': 4, ''DHW priority'': 5}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r503
+        entity_id: sensor.hp_gchv_r503_01f7h
   - name: HP Discrete input 7 function
     unique_id: hp_gchv_w504
     options: '{{ [''Disabled'', ''Power limitation (night mode)'', ''Load shed'', ''Anti-legionella request'', ''DHW request'', ''DHW priority''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r504'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r504'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
+    availability: '{{ is_number(states(''sensor.hp_gchv_r504_01f8h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r504_01f8h'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
       5: ''DHW priority''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
@@ -2008,12 +2008,12 @@ template:
         value: '{{ ({''Disabled'': 0, ''Power limitation (night mode)'': 1, ''Load shed'': 2, ''Anti-legionella request'': 3, ''DHW request'': 4, ''DHW priority'': 5}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r504
+        entity_id: sensor.hp_gchv_r504_01f8h
   - name: HP Discrete input 8 function
     unique_id: hp_gchv_w505
     options: '{{ [''Disabled'', ''Power limitation (night mode)'', ''Load shed'', ''Anti-legionella request'', ''DHW request'', ''DHW priority''] }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r505'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r505'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
+    availability: '{{ is_number(states(''sensor.hp_gchv_r505_01f9h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r505_01f9h'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Power limitation (night mode)'', 2: ''Load shed'', 3: ''Anti-legionella request'', 4: ''DHW request'',
       5: ''DHW priority''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
@@ -2024,14 +2024,14 @@ template:
         value: '{{ ({''Disabled'': 0, ''Power limitation (night mode)'': 1, ''Load shed'': 2, ''Anti-legionella request'': 3, ''DHW request'': 4, ''DHW priority'': 5}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r505
+        entity_id: sensor.hp_gchv_r505_01f9h
   - name: HP Discrete output 5 function
     unique_id: hp_gchv_w500
     options: '{{ [''Disabled'', ''Unit in alarm'', ''Unit in standby'', ''Unit running'', ''Unit in cool mode'', ''Unit in heat mode'', ''Unit in DHW'', ''Unit in defrost'', ''Unit controlled by Modbus'']
       }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r500'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r500'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit in
-      heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r500_01f4h'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r500_01f4h'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit
+      in heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -2042,14 +2042,14 @@ template:
           controlled by Modbus'': 8}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r500
+        entity_id: sensor.hp_gchv_r500_01f4h
   - name: HP Discrete output 8 function
     unique_id: hp_gchv_w506
     options: '{{ [''Disabled'', ''Unit in alarm'', ''Unit in standby'', ''Unit running'', ''Unit in cool mode'', ''Unit in heat mode'', ''Unit in DHW'', ''Unit in defrost'', ''Unit controlled by Modbus'']
       }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r506'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r506'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit in
-      heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r506_01fah'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r506_01fah'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit
+      in heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -2060,14 +2060,14 @@ template:
           controlled by Modbus'': 8}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r506
+        entity_id: sensor.hp_gchv_r506_01fah
   - name: HP Discrete output 9 function
     unique_id: hp_gchv_w507
     options: '{{ [''Disabled'', ''Unit in alarm'', ''Unit in standby'', ''Unit running'', ''Unit in cool mode'', ''Unit in heat mode'', ''Unit in DHW'', ''Unit in defrost'', ''Unit controlled by Modbus'']
       }}'
-    availability: '{{ is_number(states(''sensor.hp_gchv_r507'')) }}'
-    state: '{% set v = (states(''sensor.hp_gchv_r507'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit in
-      heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r507_01fbh'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r507_01fbh'') | int(0)) %}{% set m = {0: ''Disabled'', 1: ''Unit in alarm'', 2: ''Unit in standby'', 3: ''Unit running'', 4: ''Unit in cool mode'', 5: ''Unit
+      in heat mode'', 6: ''Unit in DHW'', 7: ''Unit in defrost'', 8: ''Unit controlled by Modbus''} %}{{ m[v] if v in m else ''Unknown'' }}'
     select_option:
     - service: modbus.write_register
       data:
@@ -2078,14 +2078,14 @@ template:
           controlled by Modbus'': 8}[option]) % 65536 }}'
     - service: homeassistant.update_entity
       target:
-        entity_id: sensor.hp_gchv_r507
+        entity_id: sensor.hp_gchv_r507_01fbh
 switch:
 - platform: template
   switches:
     hp_dhw_priority:
       unique_id: hp_dhw_priority
       friendly_name: HP DHW priority
-      value_template: '{{ (states(''sensor.hp_gchv_r703'') | int(0)) == 1 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r703_02bfh'') | int(0)) == 1 }}'
       turn_on:
       - service: modbus.write_register
         data:
@@ -2095,7 +2095,7 @@ switch:
           value: '1'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r703
+          entity_id: sensor.hp_gchv_r703_02bfh
       turn_off:
       - service: modbus.write_register
         data:
@@ -2105,11 +2105,11 @@ switch:
           value: '0'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r703
+          entity_id: sensor.hp_gchv_r703_02bfh
     hp_force_discrete_output_5:
       unique_id: hp_force_discrete_output_5
       friendly_name: HP Force discrete output 5
-      value_template: '{{ (states(''sensor.hp_gchv_r320'') | int(0)) == 1 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r320_0140h'') | int(0)) == 1 }}'
       turn_on:
       - service: modbus.write_register
         data:
@@ -2119,7 +2119,7 @@ switch:
           value: '1'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r320
+          entity_id: sensor.hp_gchv_r320_0140h
       turn_off:
       - service: modbus.write_register
         data:
@@ -2129,11 +2129,11 @@ switch:
           value: '0'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r320
+          entity_id: sensor.hp_gchv_r320_0140h
     hp_force_discrete_output_8:
       unique_id: hp_force_discrete_output_8
       friendly_name: HP Force discrete output 8
-      value_template: '{{ (states(''sensor.hp_gchv_r337'') | int(0)) == 1 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r337_0151h'') | int(0)) == 1 }}'
       turn_on:
       - service: modbus.write_register
         data:
@@ -2143,7 +2143,7 @@ switch:
           value: '1'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r337
+          entity_id: sensor.hp_gchv_r337_0151h
       turn_off:
       - service: modbus.write_register
         data:
@@ -2153,11 +2153,11 @@ switch:
           value: '0'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r337
+          entity_id: sensor.hp_gchv_r337_0151h
     hp_force_discrete_output_9:
       unique_id: hp_force_discrete_output_9
       friendly_name: HP Force discrete output 9
-      value_template: '{{ (states(''sensor.hp_gchv_r338'') | int(0)) == 1 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r338_0152h'') | int(0)) == 1 }}'
       turn_on:
       - service: modbus.write_register
         data:
@@ -2167,7 +2167,7 @@ switch:
           value: '1'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r338
+          entity_id: sensor.hp_gchv_r338_0152h
       turn_off:
       - service: modbus.write_register
         data:
@@ -2177,396 +2177,396 @@ switch:
           value: '0'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r338
+          entity_id: sensor.hp_gchv_r338_0152h
     hp_dhw_schedule_monday:
       unique_id: hp_dhw_schedule_monday
       friendly_name: HP DHW schedule Monday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(128) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(128) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(128) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(128) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65407) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65407) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_tuesday:
       unique_id: hp_dhw_schedule_tuesday
       friendly_name: HP DHW schedule Tuesday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(64) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(64) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(64) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(64) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65471) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65471) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_wednesday:
       unique_id: hp_dhw_schedule_wednesday
       friendly_name: HP DHW schedule Wednesday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(32) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(32) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(32) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(32) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65503) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65503) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_thursday:
       unique_id: hp_dhw_schedule_thursday
       friendly_name: HP DHW schedule Thursday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(16) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(16) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(16) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(16) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65519) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65519) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_friday:
       unique_id: hp_dhw_schedule_friday
       friendly_name: HP DHW schedule Friday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(8) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(8) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(8) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(8) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65527) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65527) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_saturday:
       unique_id: hp_dhw_schedule_saturday
       friendly_name: HP DHW schedule Saturday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(4) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(4) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(4) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(4) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65531) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65531) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_dhw_schedule_sunday:
       unique_id: hp_dhw_schedule_sunday
       friendly_name: HP DHW schedule Sunday
-      value_template: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(2) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(2) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_or(2) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_or(2) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r711'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r711_02c7h'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 711
-          value: '{{ (states(''sensor.hp_gchv_r711'') | int(0)) | bitwise_and(65533) }}'
+          value: '{{ (states(''sensor.hp_gchv_r711_02c7h'') | int(0)) | bitwise_and(65533) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r711
+          entity_id: sensor.hp_gchv_r711_02c7h
     hp_anti_legionella_schedule_monday:
       unique_id: hp_anti_legionella_schedule_monday
       friendly_name: HP Anti-legionella schedule Monday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(128) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(128) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(128) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(128) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65407) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65407) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_tuesday:
       unique_id: hp_anti_legionella_schedule_tuesday
       friendly_name: HP Anti-legionella schedule Tuesday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(64) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(64) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(64) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(64) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65471) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65471) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_wednesday:
       unique_id: hp_anti_legionella_schedule_wednesday
       friendly_name: HP Anti-legionella schedule Wednesday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(32) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(32) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(32) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(32) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65503) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65503) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_thursday:
       unique_id: hp_anti_legionella_schedule_thursday
       friendly_name: HP Anti-legionella schedule Thursday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(16) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(16) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(16) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(16) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65519) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65519) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_friday:
       unique_id: hp_anti_legionella_schedule_friday
       friendly_name: HP Anti-legionella schedule Friday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(8) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(8) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(8) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(8) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65527) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65527) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_saturday:
       unique_id: hp_anti_legionella_schedule_saturday
       friendly_name: HP Anti-legionella schedule Saturday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(4) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(4) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(4) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(4) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65531) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65531) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
     hp_anti_legionella_schedule_sunday:
       unique_id: hp_anti_legionella_schedule_sunday
       friendly_name: HP Anti-legionella schedule Sunday
-      value_template: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(2) > 0 }}'
+      value_template: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(2) > 0 }}'
       turn_on:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_or(2) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_or(2) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah
       turn_off:
       - condition: template
-        value_template: '{{ is_number(states(''sensor.hp_gchv_r714'')) }}'
+        value_template: '{{ is_number(states(''sensor.hp_gchv_r714_02cah'')) }}'
       - service: modbus.write_register
         data:
           hub: heatpump
           slave: 11
           address: 714
-          value: '{{ (states(''sensor.hp_gchv_r714'') | int(0)) | bitwise_and(65533) }}'
+          value: '{{ (states(''sensor.hp_gchv_r714_02cah'') | int(0)) | bitwise_and(65533) }}'
       - service: homeassistant.update_entity
         target:
-          entity_id: sensor.hp_gchv_r714
+          entity_id: sensor.hp_gchv_r714_02cah

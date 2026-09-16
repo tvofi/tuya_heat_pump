@@ -52,16 +52,57 @@ SCAN_STATUS = 30
 SCAN_CONFIG = 120
 
 
+# Home Assistant's slugify (homeassistant/util/__init__.py, core 2026.9.2)
+# calls python-slugify 8.0.4 with separator "_" and maps an empty result to
+# "unknown". For the characters below that pipeline reduces to: transliterate
+# (NFKD leaves them unchanged; text-unidecode and Unidecode both turn "°"
+# into "deg"), lowercase, collapse every run of anything that is not [a-z0-9]
+# into one "_", strip "_" at both ends. So "(°C)" slugs to "degc", not "c".
+# Characters outside this set (a quote, a comma between digits, other
+# non-ASCII) take other branches of python-slugify, so they raise here rather
+# than yield an id Home Assistant would not produce.
+_SLUG_TRANSLITERATE = {"°": "deg"}
+_SLUG_VERIFIED = re.compile(r"[A-Za-z0-9 ()\-/:_°]*")
+
+
 def slug(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    if not _SLUG_VERIFIED.fullmatch(name):
+        bad = sorted({c for c in name if not _SLUG_VERIFIED.fullmatch(c)})
+        raise ValueError(
+            f"slug({name!r}): characters {bad} are not in the set verified "
+            f"against Home Assistant's slugify; verify them and extend _SLUG_VERIFIED"
+        )
+    for char, ascii_text in _SLUG_TRANSLITERATE.items():
+        name = name.replace(char, ascii_text)
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "unknown"
 
 
 def raw_id(addr: int) -> str:
     return slug(f"{PREFIX} gchv r{addr}")
 
 
+def raw_name(addr: int, hexaddr: str) -> str:
+    return f"{PREFIX} GCHV R{addr} ({hexaddr})"
+
+
+# addr -> the name of the raw modbus sensor emitted for it, filled in by
+# raw_sensor() as each sensor is emitted. Home Assistant builds an entity_id
+# from the *name*, not from unique_id, so raw_entity() must slugify the name
+# that was actually emitted; deriving it from raw_id() instead yields
+# sensor.hp_gchv_r404 for a sensor that is really sensor.hp_gchv_r404_0194h.
+RAW_NAMES: dict[int, str] = {}
+
+
 def raw_entity(addr: int) -> str:
-    return "sensor." + raw_id(addr)
+    try:
+        name = RAW_NAMES[addr]
+    except KeyError:
+        raise RuntimeError(
+            f"raw_entity({addr}) called before a raw sensor was emitted for "
+            f"address {addr}; its entity_id cannot be derived. Emit the raw "
+            f"sensor first (RAW or ensure_raw)."
+        ) from None
+    return "sensor." + slug(name)
 
 
 def nice(name: str) -> str:
@@ -330,11 +371,14 @@ def write(addr: int, value_tpl: str) -> list[dict]:
 
 
 def raw_sensor(addr: int, hexaddr: str, dtype: str, scan: int, input_type: str = "holding") -> dict:
-    return {"name": f"{PREFIX} GCHV R{addr} ({hexaddr})", "unique_id": raw_id(addr), "slave": SLAVE,
+    name = raw_name(addr, hexaddr)
+    RAW_NAMES[addr] = name
+    return {"name": name, "unique_id": raw_id(addr), "slave": SLAVE,
             "address": addr, "input_type": input_type, "data_type": dtype, "scan_interval": scan}
 
 
 def build() -> dict:
+    RAW_NAMES.clear()
     sensors, t_sensors, t_binary, t_numbers, t_selects = [], [], [], [], []
     switches: dict[str, dict] = {}
     raw_defined: set[int] = set()

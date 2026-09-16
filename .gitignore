@@ -1,0 +1,5 @@
+# Bytecode caches. `tools/` now holds runnable scripts (the package generator
+# and its test), so running them leaves these behind in a working tree that
+# has never tracked one.
+__pycache__/
+*.py[cod]
