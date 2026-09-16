@@ -52,8 +52,29 @@ SCAN_STATUS = 30
 SCAN_CONFIG = 120
 
 
+# Home Assistant's slugify (homeassistant/util/__init__.py, core 2026.9.2)
+# calls python-slugify 8.0.4 with separator "_" and maps an empty result to
+# "unknown". For the characters below that pipeline reduces to: transliterate
+# (NFKD leaves them unchanged; text-unidecode and Unidecode both turn "°"
+# into "deg"), lowercase, collapse every run of anything that is not [a-z0-9]
+# into one "_", strip "_" at both ends. So "(°C)" slugs to "degc", not "c".
+# Characters outside this set (a quote, a comma between digits, other
+# non-ASCII) take other branches of python-slugify, so they raise here rather
+# than yield an id Home Assistant would not produce.
+_SLUG_TRANSLITERATE = {"°": "deg"}
+_SLUG_VERIFIED = re.compile(r"[A-Za-z0-9 ()\-/:_°]*")
+
+
 def slug(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    if not _SLUG_VERIFIED.fullmatch(name):
+        bad = sorted({c for c in name if not _SLUG_VERIFIED.fullmatch(c)})
+        raise ValueError(
+            f"slug({name!r}): characters {bad} are not in the set verified "
+            f"against Home Assistant's slugify; verify them and extend _SLUG_VERIFIED"
+        )
+    for char, ascii_text in _SLUG_TRANSLITERATE.items():
+        name = name.replace(char, ascii_text)
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "unknown"
 
 
 def raw_id(addr: int) -> str:
