@@ -16,6 +16,7 @@ from .coordinator import TuyaScaleDataUpdateCoordinator
 from .raw_codec import decode_raw_field as _decode_raw_field
 from .raw_codec import resolve_raw_source as _resolve_raw_source
 from .raw_codec import watch_pending_raw_entities
+from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,9 +59,16 @@ async def async_setup_entry(
                 )
             continue
 
-        if coordinator.data and sensor_code in coordinator.data:
+        # A model file may decouple the dict key from the real Tuya code
+        # (e.g. "fault_description" reading the "fault" DP) via "code".
+        lookup_code = sensor_config.get("code", sensor_code)
+        if coordinator.data and lookup_code in coordinator.data:
             sensors.append(TuyaHeatpumpSensor(coordinator, sensor_code, sensor_config))
             _LOGGER.info("Adding sensor: %s (%s)", sensor_config.get('name', sensor_code), sensor_code)
+        elif "formula" in sensor_config:
+            # Derived value computed from other sensors (e.g. water ΔT).
+            sensors.append(TuyaHeatpumpSensor(coordinator, sensor_code, sensor_config))
+            _LOGGER.info("Adding formula sensor: %s", sensor_config.get('name', sensor_code))
         elif sensor_code == "calculated_power":
             sensors.append(TuyaHeatpumpSensor(coordinator, sensor_code, sensor_config))
             _LOGGER.info("Adding calculated sensor: %s", sensor_config.get('name', sensor_code))
@@ -101,17 +109,77 @@ class TuyaHeatpumpSensor(SensorEntity):
         self._attr_state_class = config.get('state_class')
         self._attr_has_entity_name = True
         self._attr_device_info = coordinator.device_info
+        apply_common_entity_attrs(self, config)
+        # Real Tuya code to read from coordinator.data; normally the dict
+        # key, but a model file may point several entities at one DP.
+        self._lookup_code = config.get("code", sensor_code)
 
     @property
     def device_info(self):
         """Return device info."""
         return self.coordinator.device_info
 
+    def _converted_value_of(self, code: str):
+        """Converted (scaled) value of another plain sensor in this model,
+        used by formula sensors. None when unknown/unavailable."""
+        if not self.coordinator.data:
+            return None
+        sensor_configs = self.coordinator.model_mapping.get("sensors", {})
+        config = sensor_configs.get(code) or {}
+        lookup = config.get("code", code)
+        if lookup not in self.coordinator.data:
+            return None
+        raw_value = self.coordinator.data[lookup].get('value')
+        if raw_value is None or isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+            return None
+        try:
+            result = Conversion(config.get('conversion', 'value')).convert(raw_value)
+        except Exception:
+            return None
+        return result if isinstance(result, (int, float)) else None
+
+    def _evaluate_formula(self) -> float | None:
+        """Evaluate config["formula"] with other sensor codes as names.
+
+        Example: ``"Tout - Tin"``. Any referenced sensor that is missing
+        makes the result None rather than raising.
+        """
+        formula = self._config.get("formula")
+        names = self._config.get("formula_inputs")
+        if not names:
+            # Pull identifiers straight out of the expression.
+            import re
+            names = [n for n in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", formula)
+                     if n not in ("abs", "min", "max", "round", "and", "or", "not", "if", "else", "None")]
+        namespace = {}
+        for name in names:
+            value = self._converted_value_of(name)
+            if value is None:
+                return None
+            namespace[name] = value
+        try:
+            result = eval(
+                formula,
+                {"__builtins__": {"abs": abs, "min": min, "max": max, "round": round,
+                                  "float": float, "int": int}},
+                namespace,
+            )
+        except Exception as err:
+            _LOGGER.debug("Formula %r failed for %s: %s", formula, self._sensor_code, err)
+            return None
+        if isinstance(result, bool) or not isinstance(result, (int, float)):
+            return None
+        precision = self._config.get("precision", 1)
+        return round(float(result), precision)
+
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
         if self._sensor_code == "calculated_power":
             return self._calculate_power()
+
+        if "formula" in self._config:
+            return self._evaluate_formula()
 
         # Raw-field sensor: decode from the raw payload DP
         if "field_index" in self._config:
@@ -163,18 +231,30 @@ class TuyaHeatpumpSensor(SensorEntity):
                 return value_map.get(result, self._config.get('value_map_default'))
             return float(result) if isinstance(result, (int, float)) else result
 
-        if not self.coordinator.data or self._sensor_code not in self.coordinator.data:
+        if not self.coordinator.data or self._lookup_code not in self.coordinator.data:
             return None
 
-        raw_value = self.coordinator.data[self._sensor_code]['value']
+        raw_value = self.coordinator.data[self._lookup_code]['value']
+        if raw_value is None:
+            return None
 
         conversion = Conversion(self._config.get('conversion', 'value'))
         try:
             result = conversion.convert(raw_value)
-            return float(result) if isinstance(result, (int, float)) else result
         except Exception as err:
             _LOGGER.warning("Conversion failed for %s: %s", self._sensor_code, err)
             return raw_value
+        # Optional lookup table (enum → label), same semantics as for
+        # raw-field sensors above.
+        value_map = self._config.get('value_map')
+        if value_map:
+            return value_map.get(result, self._config.get('value_map_default', result))
+        if isinstance(result, (int, float)):
+            return float(result)
+        if isinstance(result, str) and len(result) > 255:
+            # HA rejects states longer than 255 chars (large raw blobs).
+            return result[:252] + "..."
+        return result
 
     def _calculate_power(self) -> float | None:
         """Güç hesaplama: P = V × I"""
@@ -225,15 +305,19 @@ class TuyaHeatpumpSensor(SensorEntity):
             attrs["tuya_code"] = self._config.get("code", self._sensor_code)
             attrs["tuya_dp_id"] = self._config.get("dp_id")
 
+        if "formula" in self._config:
+            attrs["formula"] = self._config["formula"]
+
         if self.coordinator.model_id:
             attrs["tuya_model_id"] = self.coordinator.model_id
 
+        attrs.update(common_extra_attrs(self._config))
         return attrs
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        if self._sensor_code in ["calculated_power", "total_energy"]:
+        if self._sensor_code in ["calculated_power", "total_energy"] or "formula" in self._config:
             return self.coordinator.last_update_success
 
         if "field_index" in self._config:
@@ -246,9 +330,9 @@ class TuyaHeatpumpSensor(SensorEntity):
             )
 
         return (
-            self.coordinator.last_update_success and 
+            self.coordinator.last_update_success and
             self.coordinator.data is not None and
-            self._sensor_code in self.coordinator.data
+            self._lookup_code in self.coordinator.data
         )
 
     async def async_added_to_hass(self) -> None:

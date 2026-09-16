@@ -49,6 +49,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
             await coordinator.async_config_entry_first_refresh()
             _LOGGER.debug("İlk refresh tamamlandı (%.1fsn)", _elapsed())
+
+            # Live register discovery: now that we know both the device's
+            # schema and what it actually reports, expose every data
+            # point the model file left out (see discovery.py). Must run
+            # before the platforms are forwarded so they see the merged
+            # mapping.
+            coordinator.apply_discovery()
     except asyncio.TimeoutError as err:
         raise ConfigEntryNotReady(
             f"Tuya Heat Pump setup timed out after {SETUP_TIMEOUT}s "

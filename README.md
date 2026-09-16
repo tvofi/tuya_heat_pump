@@ -19,7 +19,7 @@
 | 5 | Adlar Castra Domestic | | 21 | Inventor Xforce | | 37 | Power World R290 Full DC |
 | 6 | Alps Exclusive | | 22 | IPS Pool Systems | | 38 | Pure Blue Onyx |
 | 7 | Aquark | | 23 | ITS | | 39 | Reclaim Eco R290 |
-| 8 | Aquastrong | | 24 | Ivapool | | 40 | Rotenso |
+| 8 | Aquastrong | | 24 | Ivapool | | 40 | Rotenso Windmi |
 | 9 | Aquatech X6 | | 25 | Kensol | | 41 | SolarEast |
 | 10 | Aquatech X6 320L | | 26 | Kushiro (Luqstoff) | | 42 | SolarEast BLN |
 | 11 | Cordivari Vestalis | | 27 | Lunna LV LT1530 (Nordic LV LT1530) | | 43 | Swim&Fun Fjord |
@@ -113,6 +113,24 @@ On top of Cloud mode, you can optionally enable real-time MQTT push via the Tuya
 - This step is entirely optional — skip it and the integration works exactly as before.
 - If the push token ever becomes invalid, you'll see a clickable **Repair** notification under *Settings > System > Repairs* to reconnect.
 
+### Live register discovery (every data point, mapped or not)
+
+A model file only knows the data points its author labelled. Everything else your heat pump reports used to be invisible. With **Auto-discover unmapped data points** (on by default, toggle it in the integration's *Configure* dialog) the integration reads the device's full Tuya *thing model* — the same register map the Smart Life app renders its UI from — and creates an entity for every data point the model file does not cover:
+
+| Tuya type | Read-only | Writable |
+|---|---|---|
+| `value` | sensor (unit, scale and device class from the schema) | number (min/max/step/scale from the schema) |
+| `bool` | binary sensor | switch |
+| `enum` | sensor (labelled) | select |
+| `bitmap` | "… Description" sensor listing active flags + problem binary sensor | — |
+| `raw` / `string` | diagnostic sensor (raw blobs are created disabled) | — |
+
+- Discovered entities carry a `discovered: true` attribute plus `tuya_name` (Tuya's own, often Chinese, name — translated to English where possible), `tuya_type` and `tuya_access`.
+- Writable discovered entities appear under *Configuration* on the device page. They write the same DP the Tuya app writes.
+- Works in Cloud and Local mode. Local mode still needs the cloud credentials once to fetch the schema; it is cached in the config entry afterwards. Without any schema (e.g. no cloud), unknown local DPs are exposed read-only as `DP <id>`.
+- Curated model files always win: a discovered entity never replaces one defined in `models/`.
+- **Download diagnostics** (device page → ⋮ → *Download diagnostics*) gives you the full schema, live values, the mapping in use and the list of still-unmapped codes — attach it when requesting a model file.
+
 ---
 
 ## Notes
@@ -130,6 +148,7 @@ Standalone scripts for onboarding new devices and debugging — run manually on 
 - [`lokal_key_extractor.py`](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/lokal_key_extractor.py) — tries to recover your device's Local Key for LAN mode.
 - [`tuya_dps_explorer.py`](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/tuya_dps_explorer.py) — reads raw DP values directly over your local network.
 - [`raw_explorer.py`](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/raw_explorer.py) — live GUI for decoding hidden raw data-points, like a missing target temperature setting.
+- [`discovery_preview.py`](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/discovery_preview.py) — shows offline which extra entities live register discovery would create from a `tuya_api_test.py` dump.
 
 ---
 

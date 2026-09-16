@@ -27,6 +27,8 @@ from .const import (
     PROTOCOL_OPTIONS,
     CONF_USER_CODE,
     CONF_SHARING_TOKEN_INFO,
+    CONF_AUTO_DISCOVERY,
+    DEFAULT_AUTO_DISCOVERY,
 )
 from .coordinator import TuyaScaleDataUpdateCoordinator
 from .sharing_mqtt import SharingQRLogin
@@ -89,6 +91,7 @@ STEP_CLOUD_OPTIONS_SCHEMA = vol.Schema(
                 mode=selector.NumberSelectorMode.BOX
             )
         ),
+        vol.Optional(CONF_AUTO_DISCOVERY, default=DEFAULT_AUTO_DISCOVERY): bool,
     }
 )
 
@@ -174,6 +177,14 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
         else:
             return await self.async_step_local_options()
 
+    def _current_auto_discovery(self) -> bool:
+        return bool(
+            self._config_entry.options.get(
+                CONF_AUTO_DISCOVERY,
+                self._config_entry.data.get(CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY),
+            )
+        )
+
     async def async_step_cloud_options(self, user_input=None):
         """Manage cloud options."""
         if user_input is not None:
@@ -196,6 +207,10 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
                             mode=selector.NumberSelectorMode.BOX
                         )
                     ),
+                    vol.Optional(
+                        CONF_AUTO_DISCOVERY,
+                        default=self._current_auto_discovery(),
+                    ): bool,
                 }
             ),
         )
@@ -231,8 +246,16 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
                         data=updated_data
                     )
                     
-                    # Options'a sadece gereksiz alanları ekle (boş olabilir)
-                    return self.async_create_entry(title="", data={})
+                    # Connection details live in entry.data (above); the
+                    # only real option for local mode is discovery.
+                    return self.async_create_entry(
+                        title="",
+                        data={
+                            CONF_AUTO_DISCOVERY: user_input.get(
+                                CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY
+                            )
+                        },
+                    )
             except Exception:
                 _LOGGER.exception("Local validation error in options")
                 errors["base"] = "cannot_connect"
@@ -257,6 +280,10 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
                             mode=selector.SelectSelectorMode.DROPDOWN
                         )
                     ),
+                    vol.Optional(
+                        CONF_AUTO_DISCOVERY,
+                        default=self._current_auto_discovery(),
+                    ): bool,
                 }
             ),
             errors=errors,

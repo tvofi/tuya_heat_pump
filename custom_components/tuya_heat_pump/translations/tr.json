@@ -27,7 +27,11 @@
             },
             "cloud_options": {
                 "data": {
-                    "scan_interval": "Sensör Yenileme Süresi (dakika)"
+                    "scan_interval": "Sensör Yenileme Süresi (dakika)",
+                    "auto_discovery": "Eşlenmemiş veri noktalarını otomatik keşfet (cihazın bildirdiği her register'ı göster)"
+                },
+                "data_description": {
+                    "auto_discovery": "Açıkken, model dosyasında tanımlı olmayan ama cihazın bildirdiği her veri noktası (Tuya şemasına göre sensör, anahtar, sayı veya seçim olarak) ek bir varlık olarak gösterilir. Keşfedilen varlıklar 'discovered' özniteliğiyle işaretlenir; yazılabilir olanlar Yapılandırma altında görünür. Sadece model dosyasındaki varlıkları tutmak için kapatın."
                 },
                 "description": "Cloud bağlantısı için sensör yenileme süresini ayarlayın\n\nDüşük değerler = daha hızlı güncellemeler ama daha çok API çağrısı",
                 "title": "Cloud Yapılandırması"
@@ -60,7 +64,11 @@
             },
             "cloud_options": {
                 "data": {
-                    "scan_interval": "Sensör Yenileme Süresi (dakika)"
+                    "scan_interval": "Sensör Yenileme Süresi (dakika)",
+                    "auto_discovery": "Eşlenmemiş veri noktalarını otomatik keşfet (cihazın bildirdiği her register'ı göster)"
+                },
+                "data_description": {
+                    "auto_discovery": "Açıkken, model dosyasında tanımlı olmayan ama cihazın bildirdiği her veri noktası (Tuya şemasına göre sensör, anahtar, sayı veya seçim olarak) ek bir varlık olarak gösterilir. Keşfedilen varlıklar 'discovered' özniteliğiyle işaretlenir; yazılabilir olanlar Yapılandırma altında görünür. Sadece model dosyasındaki varlıkları tutmak için kapatın."
                 },
                 "description": "Sensör yenileme süresini ayarlayın\n\nDüşük değerler = daha hızlı güncellemeler ama daha çok API çağrısı",
                 "title": "Cloud Cihaz Ayarları"
@@ -69,7 +77,11 @@
                 "data": {
                     "ip": "Cihaz IP Adresi",
                     "local_key": "Local Key",
-                    "protocol": "Protokol Versiyonu"
+                    "protocol": "Protokol Versiyonu",
+                    "auto_discovery": "Eşlenmemiş veri noktalarını otomatik keşfet (cihazın bildirdiği her register'ı göster)"
+                },
+                "data_description": {
+                    "auto_discovery": "Açıkken, model dosyasında tanımlı olmayan ama cihazın bildirdiği her veri noktası (Tuya şemasına göre sensör, anahtar, sayı veya seçim olarak) ek bir varlık olarak gösterilir. Keşfedilen varlıklar 'discovered' özniteliğiyle işaretlenir; yazılabilir olanlar Yapılandırma altında görünür. Sadece model dosyasındaki varlıkları tutmak için kapatın."
                 },
                 "description": "Yerel cihaz bağlantı bilgilerini güncelleyin\n\nCihaz aynı yerel ağda olmalı",
                 "title": "Yerel Cihaz Ayarları"

@@ -42,10 +42,22 @@ from .const import (
     CONF_USER_CODE,
     CONF_CACHED_ACCESS_TOKEN,
     CONF_CACHED_TOKEN_EXPIRES_AT,
+    CONF_CACHED_MODEL_SCHEMA,
+    CONF_AUTO_DISCOVERY,
+    DEFAULT_AUTO_DISCOVERY,
 )
 import tinytuya
 from .model_loader import load_model_mapping, async_load_model_mapping
 from .raw_codec import encode_raw_field
+from .discovery import (
+    ENTITY_CATEGORIES,
+    build_discovered_mapping,
+    compact_schema,
+    count_entities,
+    parse_device_schema,
+    schema_from_cache,
+    unmapped_codes,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,6 +108,22 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         self.model_id = None
         self.model_mapping = None
         self.dp_mapping = {}
+        # --- Live register discovery (see discovery.py) ---------------------
+        # device_schema: {dp_id: property} parsed from the Tuya thing model
+        # (cloud) or restored from the entry cache. Empty when neither is
+        # available (then discovery falls back to typing live values).
+        # discovered_mapping: the entity configs generated for DPs the
+        # static model file does not cover; merged into model_mapping by
+        # apply_discovery() once the first refresh has shown what the
+        # device really reports.
+        self.device_schema: dict[int, dict] = {}
+        self.discovered_mapping: dict[str, dict] = {}
+        self.discovery_enabled = bool(
+            config_entry.options.get(
+                CONF_AUTO_DISCOVERY,
+                config_entry.data.get(CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY),
+            )
+        )
         # --- MQTT (tuya_sharing) — tamamen opsiyonel, bkz. sharing_mqtt.py.
         # CONF_USER_CODE config_entry.data'da yoksa (mevcut tüm entry'ler
         # için durum bu) aşağıdakiler hiç kullanılmaz, davranış hiç
@@ -273,8 +301,74 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     self.dp_mapping[config['dp_id']] = raw_source
                     self.raw_code_by_dp_id[config['dp_id']] = raw_source
                     continue
-                self.dp_mapping[config['dp_id']] = code
+                # Use the real Tuya code (a model file may give an entity
+                # a different dict key than the DP code it reads).
+                self.dp_mapping[config['dp_id']] = config.get('code', code)
+        # Schema-known DPs the model file does not mention: map them to
+        # their real Tuya code so local (LAN) status frames use the same
+        # keys as cloud properties, and raw ones become resolvable for
+        # raw-field entities. Static definitions always win.
+        if self.discovery_enabled:
+            for dp_id, prop in self.device_schema.items():
+                if dp_id in self.dp_mapping:
+                    continue
+                self.dp_mapping[dp_id] = prop["code"]
+                if prop.get("type") == "raw":
+                    self.raw_code_by_dp_id.setdefault(dp_id, prop["code"])
         _LOGGER.info("dp_mapping oluşturuldu - %d DP tanımlı", len(self.dp_mapping))
+
+    def _set_device_schema(self, schema: dict[int, dict]) -> None:
+        self.device_schema = schema or {}
+        if self.device_schema:
+            _LOGGER.info(
+                "Device schema available: %d data points (%d writable)",
+                len(self.device_schema),
+                sum(1 for p in self.device_schema.values() if p.get("access") in ("rw", "wr")),
+            )
+
+    def apply_discovery(self) -> None:
+        """Merge auto-discovered entity configs into model_mapping.
+
+        Called from __init__.py after the first refresh (so live data is
+        known) and BEFORE the entity platforms are set up. Builds a NEW
+        mapping dict instead of mutating model_mapping in place: the
+        static mapping object comes from model_loader's module-level
+        cache and is shared by every entry using the same model file.
+        """
+        if not self.discovery_enabled or not self.model_mapping:
+            self.discovered_mapping = {}
+            return
+        static_mapping = self.model_mapping
+        self.discovered_mapping = build_discovered_mapping(
+            self.device_schema, self.data, static_mapping
+        )
+        added = count_entities(self.discovered_mapping)
+        if not added:
+            _LOGGER.info("Register discovery: every reported data point is already mapped")
+            return
+        merged = dict(static_mapping)
+        for category in ENTITY_CATEGORIES:
+            merged[category] = {
+                **(static_mapping.get(category) or {}),
+                **self.discovered_mapping.get(category, {}),
+            }
+        self.model_mapping = merged
+        self._build_dp_mapping()
+        _LOGGER.info(
+            "Register discovery: %d extra entities from unmapped data points (%s)",
+            added,
+            ", ".join(
+                f"{category}={len(items)}"
+                for category, items in self.discovered_mapping.items()
+                if items
+            ),
+        )
+
+    @property
+    def unmapped_dp_codes(self) -> list[str]:
+        """Codes the device reports that no entity (static or discovered)
+        reads. Exposed in diagnostics."""
+        return unmapped_codes(self.data, self.model_mapping or {})
 
     def _persist_entry_data(self, **fields: Any) -> None:
         """entry.data'ya kalıcı yardımcı veri (token cache, model cache) yazar.
@@ -554,12 +648,18 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 dp_id = int(dp_str)
                 code = self.dp_mapping.get(dp_id)
+                if not code and self.discovery_enabled:
+                    # Unknown to both the model file and the cloud schema
+                    # (or no schema at all): keep it under a synthetic
+                    # code so discovery can still expose it.
+                    code = f"dp_{dp_id}"
                 if code:
                     data[code] = {
                         'value': value,
                         'timestamp': current_ms,
                         'type': str(type(value).__name__),
-                        'last_update': current_str
+                        'last_update': current_str,
+                        'dp_id': dp_id,
                     }
             except ValueError:
                 continue
@@ -742,13 +842,21 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # her biri kendi config_entry'sine yazar, birbirini etkilemez.
         cached_model_id = self.config_entry.data.get("cached_model_id")
         cached_for_device = self.config_entry.data.get("cached_model_device_id")
+        cached_schema = self.config_entry.data.get(CONF_CACHED_MODEL_SCHEMA)
 
-        if cached_model_id and cached_for_device == self.device_id:
+        # The schema is only needed for register discovery. Entries that
+        # were cached before the schema cache existed (cached_schema is
+        # None) fall through to the cloud call once so the schema gets
+        # cached too; after that, restarts stay fully offline again.
+        schema_needed = self.discovery_enabled and cached_schema is None
+
+        if cached_model_id and cached_for_device == self.device_id and not schema_needed:
             _LOGGER.info(
                 "✅ model_id config_entry cache'den alındı: %s → buluta bağlanılmıyor",
                 cached_model_id
             )
             self.model_id = cached_model_id
+            self._set_device_schema(schema_from_cache(cached_schema))
             self.model_mapping = await async_load_model_mapping(self.hass, self.model_id)
             self._build_dp_mapping()
             return {}
@@ -787,7 +895,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 model_info = json.loads(model_str) if model_str else {}
                 self.model_id = model_info.get('modelId')
                 _LOGGER.info("✅ Model ID alındı: %s", self.model_id)
-              
+
+                # Full register map of the device (every DP with type,
+                # access mode, ranges, labels) — the basis for discovery.
+                self._set_device_schema(parse_device_schema(model_info))
+
                 self.model_mapping = await async_load_model_mapping(self.hass, self.model_id)
                 self._build_dp_mapping()
 
@@ -799,6 +911,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     self._persist_entry_data(
                         cached_model_id=self.model_id,
                         cached_model_device_id=self.device_id,
+                        **{CONF_CACHED_MODEL_SCHEMA: compact_schema(self.device_schema)},
                     )
                     _LOGGER.info("✅ model_id config_entry'e kaydedildi: %s", self.model_id)
                 # ────────────────────────────────────────────────────────────────
@@ -812,7 +925,16 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.warning("Model bilgisi alınamadı: %s → default mapping kullanılacak", str(err))
             self.model_id = "default"
 
-        # Default fallback
+        # Default fallback. If we only got here because the schema cache
+        # was missing but a model id WAS cached, keep using that model
+        # file rather than silently degrading to "default".
+        if cached_model_id and cached_for_device == self.device_id:
+            self.model_id = cached_model_id
+            self._set_device_schema(schema_from_cache(cached_schema))
+            self.model_mapping = await async_load_model_mapping(self.hass, self.model_id)
+            self._build_dp_mapping()
+            _LOGGER.info("Cached model %s kept (schema fetch will be retried next start)", self.model_id)
+            return {}
         self.model_mapping = load_model_mapping("default")
         self._build_dp_mapping()
         _LOGGER.info("Default model mapping yüklendi - %d DP tanımlı", len(self.dp_mapping))
@@ -1105,7 +1227,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                         'value': prop.get('value'),
                         'timestamp': prop.get('time', 0),
                         'type': prop.get('type', ''),
-                        'last_update': datetime.fromtimestamp(prop.get('time', 0) / 1000).strftime('%Y-%m-%d %H:%M:%S')
+                        'last_update': datetime.fromtimestamp(prop.get('time', 0) / 1000).strftime('%Y-%m-%d %H:%M:%S'),
+                        'dp_id': prop.get('dp_id'),
                     }
                     # Cache raw-type DPs so raw-field sensors can find
                     # their source without an explicit `raw_source` in

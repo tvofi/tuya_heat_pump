@@ -13,6 +13,7 @@ from .const import DOMAIN
 from .conversion import Conversion
 from .coordinator import TuyaScaleDataUpdateCoordinator
 from .raw_codec import decode_raw_field, resolve_raw_source, watch_pending_raw_entities
+from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +96,11 @@ class TuyaHeatpumpNumber(NumberEntity):
         self._attr_native_step = config.get('step', 1.0)
         self._attr_has_entity_name = True
         self._attr_mode = NumberMode.BOX
-        
+        apply_common_entity_attrs(self, config)
+        # Real Tuya code used for data lookups and writes (normally the
+        # dict key; discovery may have to use a different key).
+        self._lookup_code = config.get("code", number_code)
+
         # Device info
         self._attr_device_info = coordinator.device_info
 
@@ -127,10 +132,10 @@ class TuyaHeatpumpNumber(NumberEntity):
                 _LOGGER.warning("Conversion failed for raw %s: %s", self._number_code, err)
                 return raw_value
 
-        if not self.coordinator.data or self._number_code not in self.coordinator.data:
+        if not self.coordinator.data or self._lookup_code not in self.coordinator.data:
             return None
             
-        raw_value = self.coordinator.data[self._number_code]['value']
+        raw_value = self.coordinator.data[self._lookup_code]['value']
 
         conversion = Conversion(self._config.get('conversion', 'value'))
         try:
@@ -167,7 +172,7 @@ class TuyaHeatpumpNumber(NumberEntity):
                 api_value,
             )
         else:
-            success = await self.coordinator.send_command(self._number_code, api_value)
+            success = await self.coordinator.send_command(self._lookup_code, api_value)
         
         if success:
             _LOGGER.info("✅ Successfully set %s to %s", self._number_code, value)
@@ -193,7 +198,7 @@ class TuyaHeatpumpNumber(NumberEntity):
             attrs["raw_field_index"] = self._config.get("field_index")
             attrs["raw_encoding"] = self._config.get("encoding", "int32_be")
         else:
-            dp_info = self.coordinator.get_tuya_dp_info(self._number_code)
+            dp_info = self.coordinator.get_tuya_dp_info(self._lookup_code)
             attrs["tuya_code"] = dp_info["code"]
             attrs["tuya_dp_id"] = dp_info["dp_id"]
 
@@ -204,6 +209,7 @@ class TuyaHeatpumpNumber(NumberEntity):
             if "values" in self._config:
                 attrs["tuya_values"] = self._config["values"]
 
+        attrs.update(common_extra_attrs(self._config))
         return attrs
 
     @property
@@ -221,7 +227,7 @@ class TuyaHeatpumpNumber(NumberEntity):
         return (
             self.coordinator.last_update_success and 
             self.coordinator.data is not None and
-            self._number_code in self.coordinator.data
+            self._lookup_code in self.coordinator.data
         )
 
     async def async_added_to_hass(self) -> None:

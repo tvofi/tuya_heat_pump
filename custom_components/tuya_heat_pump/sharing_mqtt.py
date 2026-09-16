@@ -123,6 +123,11 @@ def _collect_required_codes(model_mapping: dict) -> set[str]:
         for key, cfg in model_mapping.get(entity_type, {}).items():
             if "dp_id" not in cfg:
                 continue
+            # Auto-discovered entries (discovery.py) are best-effort
+            # extras; a raw/timer DP that MQTT never carries must not
+            # make the whole device look "insufficiently covered".
+            if cfg.get("discovered"):
+                continue
             raw_source = cfg.get("raw_source")
             if raw_source:
                 codes.add(raw_source)
