@@ -21,7 +21,7 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #    7  switch_microwave 水箱电加热        DHW tank electric (booster) heater
 #    9  temp_set         温度设置          Heating/cooling water setpoint
 #   10  temp_current     总出水温度        Total outlet water temp  (Midea T1)
-#   15  instant_heating  即时加热          Instant / fast DHW heating
+#   15  instant_heating  电加热            Electric (backup) heater
 #   16  timer            定时              Timer schedule (raw blob, 128 B)
 #   20  fault            故障告警          Fault bitmap E0..E9, P0..P5
 #   26  temp_current_f   水箱温度          DHW tank temperature (NOT °F!)
@@ -31,32 +31,36 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #  105  T4               室外环境温度      Outdoor ambient temperature
 #  106  Tout             换热器出水温度    Plate HX water outlet  (Midea TW_out)
 #  107  T6               线控器温度        Wired controller (room) temperature
-#  108  POWER            能需              "Energy demand" 0..255 (see note)
-#  109  WP_speed         水泵档位          Water pump gear / speed level
-#  110  night_mode       -                Night (silent) mode          (Rotenso extra)
-#  111  T5               -                DHW tank sensor T5           (Rotenso extra)
-#  112  TL               -                Refrigerant liquid line temp (Rotenso extra)
-#  113  T9               -                Extra probe, see below       (Rotenso extra)
-#  114  Tw2              -                Zone 2 water temperature     (Rotenso extra)
-#  115  T3               -                Outdoor coil (condenser) temp(Rotenso extra)
-#  116  T1B              -                Outlet water after backup heater (Rotenso extra)
+#  108  POWER            能需              Energy demand, scale 1, no unit (see note)
+#  109  WP_speed         水泵档位          Water pump gear (level, no unit)
+#  110  night_mode       夜间模式          Night (silent) mode          (Rotenso extra)
+#  111  T5               排气温度          Compressor discharge temperature (Rotenso extra)
+#  112  TL               冷媒散热管温      Refrigerant (condenser) pipe temp (Rotenso extra)
+#  113  T9               IPM模块温度       Inverter (IPM) module temperature (Rotenso extra)
+#  114  Tw2              第二温区出水温度  Zone 2 outlet water temperature (Rotenso extra)
+#  115  T3               管温              Coil (pipe) temperature      (Rotenso extra)
+#  116  T1B              外部热源出口温度  External heat source outlet temp (Rotenso extra)
 #
-# Midea sensor names (T1, T1B, T3, T4, T5, TL, Tw2, TW_in, TW_out) follow
-# the M-Thermal service manual / Modbus register list (T1 = total outlet,
-# T1B = outlet after auxiliary heater, T3 = condenser, T4 = ambient,
-# T5 = DHW tank, Tw2 = circuit 2). T9 does not appear in the public
-# Midea tables; it is exposed under its own name.
+# The dp 110..116 names come from the device's own Tuya schema (issue #60
+# dump, tuya_device_data_20260707_224248.txt). Note that Rotenso's Tuya
+# firmware re-uses Midea sensor labels for other probes: "T5" here is the
+# compressor discharge temperature (排气温度), not the DHW tank (which is
+# dp 26), and "T9" is the inverter module temperature.
+#
+# The schema contains exactly these 25 data points and no installer /
+# FOR SERVICEMAN parameters (backup heater, tank heater, double zone,
+# curves, T4 limits ...). Those are only reachable over the indoor
+# unit's Modbus port: see docs/modbus/README.md.
 #
 # Notes:
 #   - Tw2 (dp 114) and T1B (dp 116) return a -30 sentinel when the probe
 #     is not wired; they are shown as unknown in that case.
 #   - Temperatures use scale=0 (device model spec, confirmed by user):
 #     values are already in °C, no conversion needed.
-#   - POWER (dp 108) is named 能需 ("energy demand") in the Tuya schema
-#     and ranges 0..255; the device spec reports it with unit W and
-#     scale 1 (W ÷ 10) which is what is used here. Treat the absolute
-#     value with caution -- it may be a load/demand level rather than a
-#     metered electrical power.
+#   - POWER (dp 108) is named 能需 ("energy demand") in the Tuya schema,
+#     scale 1 (raw ÷ 10) and has no unit; its min/max are a copy of the
+#     temperature template. It is a load/demand level, not a metered
+#     electrical power, so it is exposed without a unit.
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
 #     are E0..E9, P0..P5. The meanings below follow Midea's M-Thermal
 #     error table; check the Rotenso manual if a code looks off.
@@ -124,9 +128,10 @@ SENSOR_TYPES = {
         "state_class": "measurement",
     },
     "T1B": {
+        # Tuya name 外部热源出口温度 = external heat source (AHS) outlet temperature
         "dp_id": 116,
         "code": "T1B",
-        "name": "Outlet Water After Backup Heater (T1B)",
+        "name": "External Heat Source Outlet Temperature (T1B)",
         "unit": "°C",
         "icon": "mdi:thermometer-water",
         "device_class": "temperature",
@@ -135,9 +140,10 @@ SENSOR_TYPES = {
         "conversion": "value if value > -30 else None",
     },
     "Tw2": {
+        # Tuya name 第二温区出水温度 = zone 2 outlet water temperature
         "dp_id": 114,
         "code": "Tw2",
-        "name": "Zone 2 Water Temperature (Tw2)",
+        "name": "Zone 2 Outlet Water Temperature (Tw2)",
         "unit": "°C",
         "icon": "mdi:thermometer-water",
         "device_class": "temperature",
@@ -169,11 +175,13 @@ SENSOR_TYPES = {
         "state_class": "measurement",
     },
     "T5": {
+        # Tuya name 排气温度 = compressor discharge temperature (Midea Tp),
+        # despite the Midea-style "T5" code.
         "dp_id": 111,
         "code": "T5",
-        "name": "DHW Tank Sensor (T5)",
+        "name": "Compressor Discharge Temperature (T5)",
         "unit": "°C",
-        "icon": "mdi:water-thermometer",
+        "icon": "mdi:thermometer-high",
         "device_class": "temperature",
         "state_class": "measurement",
     },
@@ -189,29 +197,32 @@ SENSOR_TYPES = {
         "state_class": "measurement",
     },
     "T3": {
+        # Tuya name 管温 = pipe/coil temperature
         "dp_id": 115,
         "code": "T3",
-        "name": "Outdoor Coil Temperature (T3)",
+        "name": "Coil Temperature (T3)",
         "unit": "°C",
         "icon": "mdi:thermometer-lines",
         "device_class": "temperature",
         "state_class": "measurement",
     },
     "TL": {
+        # Tuya name 冷媒散热管温 = refrigerant heat-dissipation pipe temperature
         "dp_id": 112,
         "code": "TL",
-        "name": "Refrigerant Liquid Line Temperature (TL)",
+        "name": "Refrigerant Pipe Temperature (TL)",
         "unit": "°C",
         "icon": "mdi:thermometer-lines",
         "device_class": "temperature",
         "state_class": "measurement",
     },
     "T9": {
+        # Tuya name IPM模块温度 = inverter power module temperature
         "dp_id": 113,
         "code": "T9",
-        "name": "Sensor T9",
+        "name": "Inverter Module Temperature (T9)",
         "unit": "°C",
-        "icon": "mdi:thermometer",
+        "icon": "mdi:chip",
         "device_class": "temperature",
         "state_class": "measurement",
     },
@@ -229,20 +240,19 @@ SENSOR_TYPES = {
 
     # ---- Electrical & pump ----
     "POWER": {
+        # 能需 = energy demand (load level), scale 1, no unit in the schema
         "dp_id": 108,
         "code": "POWER",
-        "name": "Power",
-        "unit": "W",
-        "icon": "mdi:flash",
-        "device_class": "power",
+        "name": "Energy Demand (POWER)",
+        "icon": "mdi:gauge",
         "state_class": "measurement",
         "conversion": "value / 10",
     },
     "WP_speed": {
+        # 水泵档位 = water pump gear (level), no unit in the schema
         "dp_id": 109,
         "code": "WP_speed",
-        "name": "Water Pump Speed",
-        "unit": "%",
+        "name": "Water Pump Gear",
         "icon": "mdi:water-pump",
         "state_class": "measurement",
     },
@@ -322,9 +332,11 @@ SWITCH_TYPES = {
         "conversion": _ON_VALUES,
     },
     "instant_heating": {
+        # Tuya name 电加热 = electric heater: manual backup heater request
+        # (wired controller "BACKUP HEATER" function).
         "dp_id": 15,
         "code": "instant_heating",
-        "name": "Instant DHW Heating",
+        "name": "Electric Backup Heater",
         "icon": "mdi:heating-coil",
         "conversion": _ON_VALUES,
     },
