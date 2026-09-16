@@ -18,7 +18,7 @@ The packages in this folder use only Home Assistant's built-in `modbus` and
 
 | Unit | Manufacturer / controller | Package | Status |
 |---|---|---|---|
-| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | manual's Modbus table rows 20–159 transcribed (219 entities: every writable setpoint, curve, DHW/anti-legionella schedule, backup heater type, I/O configuration, decoded alarms); rows 1–19, 84–106, 137–138, 150–158 still to add |
+| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | manual's Modbus table rows 1–18 and 20–159 transcribed (221 entities: unit mode, occupancy and interface type, every writable setpoint, curve, DHW/anti-legionella schedule, backup heater type, I/O configuration, decoded alarms); rows 84–106, 137–138, 150–158 still to add |
 | Midea M-Thermal OEMs: **Kaisai** KHC/KMK, **Airwell** Wellea, **Ferroli** Omnia, **Inventor** Matrix, **Kaysun** Aquantia, **YORK**, Midea Arctic/Nature | Midea, wired controller H1/H2 | `midea_mthermal_r32.yaml`, `midea_mthermal_r290.yaml` | full community map, every FOR SERVICEMAN parameter writable |
 
 **Do not use the Midea packages on a Rotenso Windmi.** The Windmi's register
@@ -51,15 +51,23 @@ Heating, Ventilation & Air Conditioning; its ATW monoblock is sold as
   with `homeassistant: packages: !include_dir_named packages`), edit the
   `modbus:` block for your adapter, restart.
 
-### What the Windmi package contains (219 entities)
+### What the Windmi package contains (221 entities)
 
-Transcribed from the manual's Modbus table (rows 20–159) plus the owner
-gist for rows 1–19:
+Transcribed from the manual's section 16.5 Modbus table (rows 1–18 and
+20–159), cross-checked with the owner gist:
 
-- **Temperatures** (0.1 °C): outdoor, indoor, inlet EWT, outlet LWT,
-  refrigerant, discharge, air exchanger, DHW tank, LWT after the plate heat
-  exchanger (Tw-out), IPM refrigerant pipe, IPM module (T9), T30 defrost
-  calculation, target discharge.
+- **Unit control** (writable selects): setting mode (Off / Cool + DHW /
+  Heat + DHW — the manual limits this register to 0–2 on the Rotenso;
+  Cool-only, Heat-only and DHW-only exist on GCHV firmware only), occupancy
+  mode (Away / Sleep / Home), user interface type (dry contacts / wired
+  controller). Read-only: running mode (Off, Cool, Heat, DHW, Defrost, Home
+  anti-freeze), Normal/Eco status, night mode (frequency reduction) active.
+- **Temperatures** (0.1 °C): outdoor air, indoor air, entering water
+  Tw-in, leaving water T1, refrigerant T2B, discharge, air exchanger T3,
+  DHW tank, LWT after the plate heat exchanger (Tw-out), IPM refrigerant
+  pipe, IPM module (T9), T30 defrost calculation, target discharge. The
+  seven sensors the manual marks "−40 °C = Invalid" report *unknown*
+  instead of −40 (`nan_value`).
 - **Compressor / hydraulics**: actual and required compressor frequency,
   pump speed, capacity demand (IDU side, after ODU rectify) and actual
   output, unit capacity, fan speed level and upper/lower motor rpm
@@ -82,7 +90,11 @@ gist for rows 1–19:
   and OAT threshold.
 - **Writable selections**: heating climatic curve (none / custom / 1–12),
   cooling climatic curve (none / custom / 1–2), **backup heater type**
-  (inner EH, DHW EH, gas boiler combinations, none), control mode (water or
+  (manual section 16.4, values 0–7: combinations of the main water loop
+  electric heater — 3 kW built in, up to two more in the field — the DHW
+  tank electric heater(s) and a gas boiler started by the unit's 230 V
+  signal; 7 = no backup. The anti-freeze, base-pan and compressor crankcase
+  heaters are not affected by this setting), control mode (water or
   ambient temperature), function of discrete inputs 5–8 and discrete
   outputs 5, 8, 9.
 - **Writable switches**: DHW priority, forced discrete outputs 5/8/9, and
@@ -92,11 +104,9 @@ gist for rows 1–19:
   sensor): night mode start/end, DHW schedule start/stop, anti-legionella
   start.
 
-Not yet covered: rows 1–19 beyond the temperatures (the on/off and
-mode-setting registers, occupancy, night mode enable), rows 84–106 and
-137–138, 150–158 — those manual pages were not available. The registers
-41, 44, 45, 68 and 521 from the owner gist are exposed raw until their
-value tables are known.
+Not yet covered: rows 84–106, 137–138 and 150–158 — those manual pages
+were not available. Rows 3, 12, 15, 16 and 19 do not exist in the manual's
+numbering.
 
 ### Completing the table
 

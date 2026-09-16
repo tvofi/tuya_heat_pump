@@ -5,8 +5,9 @@
 #   wiring   : RS485 A/B/E terminals of the unit
 #   settings : 9600 baud 8N1, slave address 11 (defaults; registers
 #              1031H-1033H show the active values)
-#   source   : Rotenso Windmi installation manual, "Modbus table"
-#              (GCHV addresses, hex without trailing H = decimal), and the
+#   source   : Rotenso Windmi installation manual, 16.5 "Modbus table"
+#              rows 1-18 and 20-159 (GCHV addresses, hex without trailing
+#              H = decimal), 16.4 backup heater table, and the
 #              owner-verified gist by hvdb
 #
 # Change the `modbus:` hub to match your adapter: rtuovertcp for a TCP
@@ -22,8 +23,8 @@ modbus:
   host: 192.168.1.50
   port: 8899
   sensors:
-  - name: HP Outdoor temperature
-    unique_id: hp_outdoor_temperature
+  - name: HP Outdoor air temperature
+    unique_id: hp_outdoor_air_temperature
     slave: 11
     address: 1
     input_type: holding
@@ -34,8 +35,9 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Indoor temperature
-    unique_id: hp_indoor_temperature
+    nan_value: -400
+  - name: HP Indoor air temperature
+    unique_id: hp_indoor_air_temperature
     slave: 11
     address: 2
     input_type: holding
@@ -46,8 +48,9 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Inlet water temperature (EWT)
-    unique_id: hp_inlet_water_temperature_ewt
+    nan_value: -400
+  - name: HP Entering water temperature (Tw-in)
+    unique_id: hp_entering_water_temperature_tw_in
     slave: 11
     address: 3
     input_type: holding
@@ -58,8 +61,9 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Outlet water temperature (LWT)
-    unique_id: hp_outlet_water_temperature_lwt
+    nan_value: -400
+  - name: HP Leaving water temperature (T1)
+    unique_id: hp_leaving_water_temperature_t1
     slave: 11
     address: 4
     input_type: holding
@@ -70,8 +74,9 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Refrigerant temperature
-    unique_id: hp_refrigerant_temperature
+    nan_value: -400
+  - name: HP Refrigerant temperature (T2B)
+    unique_id: hp_refrigerant_temperature_t2b
     slave: 11
     address: 5
     input_type: holding
@@ -82,6 +87,7 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
+    nan_value: -400
   - name: HP Discharge temperature
     unique_id: hp_discharge_temperature
     slave: 11
@@ -94,8 +100,9 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Air exchanger temperature
-    unique_id: hp_air_exchanger_temperature
+    nan_value: -400
+  - name: HP Air exchanger temperature (T3)
+    unique_id: hp_air_exchanger_temperature_t3
     slave: 11
     address: 11
     input_type: holding
@@ -106,13 +113,16 @@ modbus:
     unit_of_measurement: °C
     device_class: temperature
     state_class: measurement
-  - name: HP Compressor frequency
-    unique_id: hp_compressor_frequency
+    nan_value: -400
+  - name: HP Actual compressor frequency
+    unique_id: hp_actual_compressor_frequency
     slave: 11
     address: 23
     input_type: input
     data_type: uint16
     scan_interval: 30
+    scale: 0.1
+    precision: 1
     unit_of_measurement: Hz
     device_class: frequency
     state_class: measurement
@@ -448,6 +458,13 @@ modbus:
     unique_id: hp_gchv_r68
     slave: 11
     address: 68
+    input_type: holding
+    data_type: uint16
+    scan_interval: 30
+  - name: HP GCHV R103 (0067H)
+    unique_id: hp_gchv_r103
+    slave: 11
+    address: 103
     input_type: holding
     data_type: uint16
     scan_interval: 30
@@ -970,6 +987,15 @@ template:
     unique_id: hp_gchv_t715
     availability: '{{ is_number(states(''sensor.hp_gchv_r715'')) }}'
     state: '{{ ''%02d:%02d'' | format((states(''sensor.hp_gchv_r715'') | int(0)) // 256, (states(''sensor.hp_gchv_r715'') | int(0)) % 256) }}'
+  - name: HP Running mode
+    unique_id: hp_running_mode
+    availability: '{{ is_number(states(''sensor.hp_gchv_r45'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r45'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool'', 2: ''Heat'', 4: ''DHW'', 7: ''Defrost'', 20: ''Home anti-freeze (unit protection)''} %}{{ m[v] if
+      v in m else ''Unknown '' ~ v }}'
+  - name: HP Normal / Eco status
+    unique_id: hp_normal_eco_status
+    availability: '{{ is_number(states(''sensor.hp_gchv_r103'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r103'') | int(0)) %}{% set m = {0: ''Normal'', 1: ''Eco''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
   - name: HP DHW mode
     unique_id: hp_dhw_mode
     availability: '{{ is_number(states(''sensor.hp_gchv_r201'')) }}'
@@ -983,26 +1009,6 @@ template:
     unique_id: hp_modbus_parity
     availability: '{{ is_number(states(''sensor.hp_gchv_r4146'')) }}'
     state: '{% set v = (states(''sensor.hp_gchv_r4146'') | int(0)) %}{% set m = {0: ''None'', 1: ''Odd'', 2: ''Even''} %}{{ m[v] if v in m else ''Unknown '' ~ v }}'
-  - name: HP Occupancy mode (raw)
-    unique_id: hp_occupancy_mode_raw
-    availability: '{{ is_number(states(''sensor.hp_gchv_r41'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r41'') | int(0)) }}'
-  - name: HP Setting mode (raw)
-    unique_id: hp_setting_mode_raw
-    availability: '{{ is_number(states(''sensor.hp_gchv_r44'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r44'') | int(0)) }}'
-  - name: HP Running mode (raw)
-    unique_id: hp_running_mode_raw
-    availability: '{{ is_number(states(''sensor.hp_gchv_r45'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r45'') | int(0)) }}'
-  - name: HP Frequency reduction / night mode (raw)
-    unique_id: hp_frequency_reduction_night_mode_raw
-    availability: '{{ is_number(states(''sensor.hp_gchv_r68'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r68'') | int(0)) }}'
-  - name: HP User interface type (raw)
-    unique_id: hp_user_interface_type_raw
-    availability: '{{ is_number(states(''sensor.hp_gchv_r521'')) }}'
-    state: '{{ (states(''sensor.hp_gchv_r521'') | int(0)) }}'
   - name: HP Compressor frequency limitation reason 1
     unique_id: hp_compressor_frequency_limitation_reason_1
     availability: '{{ is_number(states(''sensor.hp_gchv_r4121'')) }}'
@@ -1041,6 +1047,10 @@ template:
       high (Pb)''), (8, ''IDU quantity decrease (H7)''), (16, ''3x over current in 60 min (H10)''), (32, ''Discharge sensor fail (P4)''), (64, ''Refrigerant cool pipe sensor fail (Ec)''), (128, ''Low pressure
       protection (P2)'')] %}{% if v | bitwise_and(b) %}{% set ns.r = ns.r + [n] %}{% endif %}{% endfor %}{{ ns.r | join('', '') if ns.r else ''OK'' }}'
 - binary_sensor:
+  - name: HP Night mode (frequency reduction) active
+    unique_id: hp_night_mode_frequency_reduction_active
+    availability: '{{ is_number(states(''sensor.hp_gchv_r68'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r68'') | int(0)) | bitwise_and(1) > 0 }}'
   - name: HP Flow switch closed
     unique_id: hp_flow_switch_closed
     availability: '{{ is_number(states(''sensor.hp_gchv_r105'')) }}'
@@ -1840,6 +1850,51 @@ template:
       target:
         entity_id: sensor.hp_gchv_r715
 - select:
+  - name: HP Setting mode
+    unique_id: hp_gchv_w44
+    options: '{{ [''Off'', ''Cool + DHW'', ''Heat + DHW''] }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r44'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r44'') | int(0)) %}{% set m = {0: ''Off'', 1: ''Cool + DHW'', 2: ''Heat + DHW''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 11
+        address: 44
+        value: '{{ ({''Off'': 0, ''Cool + DHW'': 1, ''Heat + DHW'': 2}[option]) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_gchv_r44
+  - name: HP Occupancy mode
+    unique_id: hp_gchv_w41
+    options: '{{ [''Away'', ''Sleep'', ''Home''] }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r41'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r41'') | int(0)) %}{% set m = {0: ''Away'', 1: ''Sleep'', 2: ''Home''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 11
+        address: 41
+        value: '{{ ({''Away'': 0, ''Sleep'': 1, ''Home'': 2}[option]) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_gchv_r41
+  - name: HP User interface type
+    unique_id: hp_gchv_w521
+    options: '{{ [''Dry contacts (on/off, home/away, mode)'', ''Wired controller''] }}'
+    availability: '{{ is_number(states(''sensor.hp_gchv_r521'')) }}'
+    state: '{% set v = (states(''sensor.hp_gchv_r521'') | int(0)) %}{% set m = {1: ''Dry contacts (on/off, home/away, mode)'', 2: ''Wired controller''} %}{{ m[v] if v in m else ''Unknown'' }}'
+    select_option:
+    - service: modbus.write_register
+      data:
+        hub: heatpump
+        slave: 11
+        address: 521
+        value: '{{ ({''Dry contacts (on/off, home/away, mode)'': 1, ''Wired controller'': 2}[option]) % 65536 }}'
+    - service: homeassistant.update_entity
+      target:
+        entity_id: sensor.hp_gchv_r521
   - name: HP Heating climatic curve
     unique_id: hp_gchv_w581
     options: '{{ [''No curve (fixed setpoint)'', ''Custom curve'', ''Curve 1'', ''Curve 2'', ''Curve 3'', ''Curve 4'', ''Curve 5'', ''Curve 6'', ''Curve 7'', ''Curve 8'', ''Curve 9'', ''Curve 10'', ''Curve

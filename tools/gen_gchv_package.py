@@ -13,9 +13,10 @@ without the trailing H (0174H = 372).
 
 Sources
 -------
-* Rotenso Windmi installation & user manual, Modbus table rows 20-159
-  (transcribed from the owner's pages; rows 1-19 and 84-106 were not
-  available and are covered by the owner-verified gist below where known).
+* Rotenso Windmi installation & user manual, section 16.5 "Modbus table"
+  rows 1-18 and 20-159 (transcribed from the owner's pages; rows 84-106,
+  137-138 and 150-158 were not available) and section 16.4 "Table for
+  backup heaters and craft heaters" (meaning of the backup heater type).
 * https://gist.github.com/hvdb/a6a6fdc889573084ac2bdd53e71303c7 (working
   Home Assistant configuration of a Windmi owner).
 
@@ -23,7 +24,9 @@ Conventions
 -----------
 * "Data=Temp*10" registers are read with scale 0.1 and written as
   round(value*10); negative ranges are read as int16 and written modulo
-  65536 so -4 becomes 65532.
+  65536 so -4 becomes 65532. Temperatures the manual marks "-40 °C =
+  Invalid" get nan_value -400 (raw value) so a missing sensor reads as
+  unknown instead of -40.
 * hh:mm registers hold hour*256+minute: exposed as two numbers per
   register with read-modify-write.
 * Day bitmaps (b7=Monday ... b1=Sunday) are exposed as one switch per
@@ -70,15 +73,15 @@ def nice(name: str) -> str:
 # (addr, hex, name, input_type, data_type, scale, precision, unit, device_class, state_class, scan)
 # ---------------------------------------------------------------------------
 RO_VALUES = [
-    # owner-verified temperatures (rows 1-19 of the manual, 0.1 °C)
-    (1, "0001H", "Outdoor temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (2, "0002H", "Indoor temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (3, "0003H", "Inlet water temperature (EWT)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (4, "0004H", "Outlet water temperature (LWT)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (5, "0005H", "Refrigerant temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    # rows 7-17 of the manual (0.1 °C, "-40 °C = Invalid")
+    (1, "0001H", "Outdoor air temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    (2, "0002H", "Indoor air temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    (3, "0003H", "Entering water temperature (Tw-in)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    (4, "0004H", "Leaving water temperature (T1)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    (5, "0005H", "Refrigerant temperature (T2B)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
     (10, "000AH", "Discharge temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (11, "000BH", "Air exchanger temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
-    (23, "0017H", "Compressor frequency", "input", "uint16", 1, 0, "Hz", "frequency", "measurement", SCAN_STATUS),
+    (11, "000BH", "Air exchanger temperature (T3)", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
+    (23, "0017H", "Actual compressor frequency", "input", "uint16", 0.1, 1, "Hz", "frequency", "measurement", SCAN_STATUS),
     (85, "0055H", "Pump speed", "input", "uint16", 1, 0, "%", None, "measurement", SCAN_STATUS),
     (206, "00CEH", "DHW tank temperature", "holding", "int16", 0.1, 1, "°C", "temperature", "measurement", SCAN_STATUS),
     (372, "0174H", "Compressor runtime", "input", "uint16", 1, 0, "h", "duration", "total_increasing", SCAN_CONFIG),
@@ -111,12 +114,16 @@ RO_VALUES = [
     (4147, "1033H", "Modbus ID", "input", "uint16", 1, 0, None, None, None, SCAN_CONFIG),
 ]
 
+# registers whose raw value -400 (-40.0 °C) means "sensor invalid" (manual rows 7-14)
+INVALID_M40 = {1, 2, 3, 4, 5, 10, 11}
+
 # Raw registers consumed by templates: (addr, hex, data_type, scan)
 RAW = [
-    (41, "0029H", "uint16", SCAN_STATUS),   # occupancy mode (owner gist)
-    (44, "002CH", "uint16", SCAN_STATUS),   # setting mode (owner gist)
-    (45, "002DH", "uint16", SCAN_STATUS),   # running mode (owner gist)
-    (68, "0044H", "uint16", SCAN_STATUS),   # frequency reduction / night mode (owner gist)
+    (41, "0029H", "uint16", SCAN_STATUS),   # occupancy mode (row 5)
+    (44, "002CH", "uint16", SCAN_STATUS),   # setting mode (row 1)
+    (45, "002DH", "uint16", SCAN_STATUS),   # running mode (row 2)
+    (68, "0044H", "uint16", SCAN_STATUS),   # frequency reduction / night mode active (row 18)
+    (103, "0067H", "uint16", SCAN_STATUS),  # normal / eco status (row 6)
     (105, "0069H", "uint16", SCAN_STATUS),  # flow switch
     (106, "006AH", "uint16", SCAN_STATUS),  # DI5..DI8 status
     (107, "006BH", "uint16", SCAN_STATUS),
@@ -124,7 +131,7 @@ RAW = [
     (109, "006DH", "uint16", SCAN_STATUS),
     (201, "00C9H", "uint16", SCAN_STATUS),  # DHW mode
     (210, "00D2H", "uint16", SCAN_STATUS),  # DHW valve
-    (521, "0209H", "uint16", SCAN_CONFIG),  # user interface type (owner gist)
+    (521, "0209H", "uint16", SCAN_CONFIG),  # user interface type (row 4)
     (4105, "1009H", "uint16", SCAN_STATUS), # alarm bitmap 1
     (4106, "100AH", "uint16", SCAN_STATUS), # alarm bitmap 2
     (4107, "100BH", "uint16", SCAN_STATUS), # alarm bitmap 3
@@ -179,6 +186,12 @@ DO_TYPES = {"Disabled": 0, "Unit in alarm": 1, "Unit in standby": 2, "Unit runni
             "Unit in cool mode": 4, "Unit in heat mode": 5, "Unit in DHW": 6,
             "Unit in defrost": 7, "Unit controlled by Modbus": 8}
 RW_SELECTS = [
+    # rows 1, 4, 5: unit control. 3 = Cool, 4 = Heat, 5 = DHW exist on GCHV
+    # firmware only; the Rotenso manual limits 002CH to 0-2.
+    (44, "002CH", "Setting mode", {"Off": 0, "Cool + DHW": 1, "Heat + DHW": 2}, False),
+    (41, "0029H", "Occupancy mode", {"Away": 0, "Sleep": 1, "Home": 2}, False),
+    (521, "0209H", "User interface type", {
+        "Dry contacts (on/off, home/away, mode)": 1, "Wired controller": 2}, False),
     (581, "0245H", "Heating climatic curve", {"No curve (fixed setpoint)": -1, "Custom curve": 0,
                                                **{f"Curve {i}": i for i in range(1, 13)}}, True),
     (586, "024AH", "Cooling climatic curve", {"No curve (fixed setpoint)": -1, "Custom curve": 0,
@@ -224,6 +237,9 @@ DAYS = [("Monday", 7), ("Tuesday", 6), ("Wednesday", 5), ("Thursday", 4),
 
 # Read-only enumerations shown as text: (addr, name, {value: label})
 RO_MAPS = [
+    (45, "Running mode", {0: "Off", 1: "Cool", 2: "Heat", 4: "DHW", 7: "Defrost",
+                          20: "Home anti-freeze (unit protection)"}),
+    (103, "Normal / Eco status", {0: "Normal", 1: "Eco"}),
     (201, "DHW mode", {0: "Eco", 1: "Anti-legionella", 2: "Regular"}),
     (4130, "P6 (IPM protection) reason", {
         0: "None", 0x0A: "IPM error", 0x01: "DC voltage too low", 0x02: "DC voltage too high",
@@ -234,6 +250,7 @@ RO_MAPS = [
 
 # Read-only bit flags: (addr, bit, name, device_class)
 RO_BITS = [
+    (68, 0, "Night mode (frequency reduction) active", None),
     (105, 0, "Flow switch closed", "opening"),
     (106, 0, "Discrete input 5 closed", None),
     (107, 0, "Discrete input 6 closed", None),
@@ -334,6 +351,8 @@ def build() -> dict:
             d["device_class"] = dc
         if sc:
             d["state_class"] = sc
+        if addr in INVALID_M40:
+            d["nan_value"] = -400
         sensors.append(d)
 
     for addr, hexaddr, dtype, scan in RAW:
@@ -407,10 +426,6 @@ def build() -> dict:
         items = ", ".join(f"{k}: '{v}'" for k, v in mapping.items())
         t_sensors.append({"name": nice(name), "unique_id": slug(nice(name)), "availability": avail(addr),
                           "state": f"{{% set v = {raw_int(addr)} %}}{{% set m = {{{items}}} %}}{{{{ m[v] if v in m else 'Unknown ' ~ v }}}}"})
-    for addr, name in ((41, "Occupancy mode (raw)"), (44, "Setting mode (raw)"), (45, "Running mode (raw)"),
-                       (68, "Frequency reduction / night mode (raw)"), (521, "User interface type (raw)")):
-        t_sensors.append({"name": nice(name), "unique_id": slug(nice(name)), "availability": avail(addr),
-                          "state": f"{{{{ {raw_int(addr)} }}}}"})
 
     # bits
     for addr, bit, name, dc in RO_BITS:
@@ -455,8 +470,9 @@ HEADER = """# ------------------------------------------------------------------
 #   wiring   : RS485 A/B/E terminals of the unit
 #   settings : 9600 baud 8N1, slave address 11 (defaults; registers
 #              1031H-1033H show the active values)
-#   source   : Rotenso Windmi installation manual, "Modbus table"
-#              (GCHV addresses, hex without trailing H = decimal), and the
+#   source   : Rotenso Windmi installation manual, 16.5 "Modbus table"
+#              rows 1-18 and 20-159 (GCHV addresses, hex without trailing
+#              H = decimal), 16.4 backup heater table, and the
 #              owner-verified gist by hvdb
 #
 # Change the `modbus:` hub to match your adapter: rtuovertcp for a TCP
