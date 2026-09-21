@@ -105,6 +105,10 @@ After installation, restart Home Assistant and follow these steps:
     - Protocol (e.g. 3.3 / 3.4)
     - Device ID
 
+### Calibrating temperature sensors
+
+Every temperature sensor gets a matching **… Calibration Offset** number entity (under *Configuration* on the device page). Set it to `+0.5` to nudge a probe that reads half a degree low, `-0.5` for one that reads high — the offset is added to the sensor's reported value on the Home Assistant side only, nothing is written to the heat pump. The offset is remembered across restarts.
+
 ### Optional: Enabling MQTT (Real-time Push)
 
 On top of Cloud mode, you can optionally enable real-time MQTT push via the Tuya Sharing (Smart Life app) broker — instant state updates instead of waiting on the poll interval, and less load on the Tuya cloud API.

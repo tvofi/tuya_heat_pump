@@ -136,7 +136,15 @@ class TuyaHeatpumpSensor(SensorEntity):
             result = Conversion(config.get('conversion', 'value')).convert(raw_value)
         except Exception:
             return None
-        return result if isinstance(result, (int, float)) else None
+        if not isinstance(result, (int, float)):
+            return None
+        # A calibration on an input sensor must carry into derived formula
+        # values (e.g. water_delta_t = Tout - Tin), otherwise the derived
+        # sensor disagrees with the calibrated inputs it is computed from.
+        offset = self.coordinator.get_sensor_offset(code)
+        if offset:
+            result = round(result + offset, 6)
+        return result
 
     def _evaluate_formula(self) -> float | None:
         """Evaluate config["formula"] with other sensor codes as names.
@@ -172,6 +180,25 @@ class TuyaHeatpumpSensor(SensorEntity):
         precision = self._config.get("precision", 1)
         return round(float(result), precision)
 
+    def _apply_offset(self, value):
+        """Apply a user calibration offset to a numeric temperature reading.
+
+        Only temperature sensors are affected; non-numeric and non-number
+        results pass through untouched. With no offset set this returns
+        the value unchanged, so existing behaviour is preserved exactly.
+        """
+        if self._attr_device_class != "temperature":
+            return value
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return value
+        offset = self.coordinator.get_sensor_offset(self._sensor_code)
+        if not offset:
+            return value
+        # Round far enough out to keep the sensor's own precision (some
+        # models read temperature at 1/100 or 1/10000 °C) while removing
+        # the binary float noise from `value + offset` (e.g. 25.1 + 0.1).
+        return round(value + offset, 6)
+
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
@@ -179,7 +206,7 @@ class TuyaHeatpumpSensor(SensorEntity):
             return self._calculate_power()
 
         if "formula" in self._config:
-            return self._evaluate_formula()
+            return self._apply_offset(self._evaluate_formula())
 
         # Raw-field sensor: decode from the raw payload DP
         if "field_index" in self._config:
@@ -229,7 +256,7 @@ class TuyaHeatpumpSensor(SensorEntity):
             value_map = self._config.get('value_map')
             if value_map is not None:
                 return value_map.get(result, self._config.get('value_map_default'))
-            return float(result) if isinstance(result, (int, float)) else result
+            return self._apply_offset(float(result)) if isinstance(result, (int, float)) else result
 
         if not self.coordinator.data or self._lookup_code not in self.coordinator.data:
             return None
@@ -250,7 +277,7 @@ class TuyaHeatpumpSensor(SensorEntity):
         if value_map:
             return value_map.get(result, self._config.get('value_map_default', result))
         if isinstance(result, (int, float)):
-            return float(result)
+            return self._apply_offset(float(result))
         if isinstance(result, str) and len(result) > 255:
             # HA rejects states longer than 255 chars (large raw blobs).
             return result[:252] + "..."

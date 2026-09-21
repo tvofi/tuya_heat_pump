@@ -8,6 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN
 from .conversion import Conversion
@@ -62,7 +64,24 @@ async def async_setup_entry(
             number_config.get('name', number_code),
             number_code
         )
-    
+
+    # Temperature sensor calibration offsets: a local (HA-side) Number
+    # entity per temperature sensor so the user can nudge a probe that
+    # reads a little high or low. Unlike TuyaHeatpumpNumber these write
+    # nothing to the device — they only adjust the sensor's reported
+    # value on the Home Assistant side.
+    for sensor_code, sensor_config in coordinator.model_mapping.get("sensors", {}).items():
+        if sensor_config.get("device_class") != "temperature":
+            continue
+        numbers.append(
+            TuyaHeatpumpCalibrationNumber(coordinator, sensor_code, sensor_config)
+        )
+        _LOGGER.info(
+            "Adding temperature calibration offset: %s (%s)",
+            sensor_config.get('name', sensor_code),
+            sensor_code,
+        )
+
     async_add_entities(numbers)
     watch_pending_raw_entities(
         config_entry, coordinator, async_add_entities,
@@ -236,3 +255,68 @@ class TuyaHeatpumpNumber(NumberEntity):
         self.async_on_remove(
             self.coordinator.async_add_listener(self.async_write_ha_state)
         )
+
+
+class TuyaHeatpumpCalibrationNumber(NumberEntity, RestoreEntity):
+    """Local calibration offset for a temperature sensor.
+
+    Adjusts what the corresponding temperature sensor reports on the
+    Home Assistant side only; nothing is written to the device. The value
+    is persisted through RestoreEntity, so it survives HA restarts and
+    integration reloads (on setup the restored value is re-published to
+    the coordinator, which the sensor reads).
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_has_entity_name = True
+    _attr_mode = NumberMode.BOX
+    _attr_icon = "mdi:thermometer-chevron-up"
+
+    def __init__(
+        self,
+        coordinator: TuyaScaleDataUpdateCoordinator,
+        sensor_code: str,
+        sensor_config: dict,
+    ) -> None:
+        """Initialize the calibration offset number."""
+        self.coordinator = coordinator
+        self._sensor_code = sensor_code
+        self._sensor_config = sensor_config
+        self._offset = 0.0
+
+        device_name_slug = coordinator.device_name.lower().replace(" ", "_").replace("-", "_")
+        self._attr_unique_id = f"{device_name_slug}_{sensor_code}_calibration_offset"
+        self._attr_name = f"{sensor_config.get('name', sensor_code)} Calibration Offset"
+        self._attr_native_unit_of_measurement = sensor_config.get('unit', '°C')
+        self._attr_native_min_value = -10.0
+        self._attr_native_max_value = 10.0
+        self._attr_native_step = 0.1
+        self._attr_device_info = coordinator.device_info
+        # A sensor the model file marks disabled-by-default should not
+        # ship an enabled calibration offset next to it.
+        apply_common_entity_attrs(self, sensor_config)
+
+    @property
+    def device_info(self):
+        """Return device info."""
+        return self.coordinator.device_info
+
+    @property
+    def native_value(self) -> float:
+        """Return the current calibration offset."""
+        return self._offset
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the calibration offset and re-render the sensor."""
+        self._offset = float(value)
+        self.coordinator.set_sensor_offset(self._sensor_code, self._offset)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the offset from the previous session, if any."""
+        await super().async_added_to_hass()
+        if (last_state := await self.async_get_last_state()) is not None:
+            try:
+                self._offset = float(last_state.state)
+            except (ValueError, TypeError):
+                self._offset = 0.0
+        self.coordinator.set_sensor_offset(self._sensor_code, self._offset)
