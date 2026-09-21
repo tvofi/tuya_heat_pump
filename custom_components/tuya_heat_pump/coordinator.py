@@ -153,6 +153,14 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # per dp_id and writes are infrequent enough that the extra
         # serialization has no practical cost.
         self._raw_write_lock = asyncio.Lock()
+        # Temperature sensor calibration offsets (Home Assistant side).
+        # Keyed by the sensor's model dict key; read by the sensor
+        # entities and written by the calibration Number entities so the
+        # user can correct a probe that reads a little high or low
+        # without any device write. Survives reloads/restarts because the
+        # Number entities are RestoreEntity-backed and re-publish their
+        # value here on setup.
+        self._sensor_offsets: dict[str, float] = {}
         self._listener_task = None
         self._heartbeat_task = None
         # Debounce için (local)
@@ -1364,6 +1372,22 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             "code": code,
             "dp_id": dp_id,
         }
+
+    def get_sensor_offset(self, sensor_code: str) -> float | None:
+        """User calibration offset for a temperature sensor, or None."""
+        return self._sensor_offsets.get(sensor_code)
+
+    def set_sensor_offset(self, sensor_code: str, offset: float | None) -> None:
+        """Store (or clear) a temperature sensor's calibration offset.
+
+        Re-renders the listeners so the affected sensor reflects the new
+        offset immediately instead of waiting for the next poll.
+        """
+        if offset is None:
+            self._sensor_offsets.pop(sensor_code, None)
+        else:
+            self._sensor_offsets[sensor_code] = offset
+        self.async_update_listeners()
 
     @property
     def extra_tuya_info(self) -> dict:
