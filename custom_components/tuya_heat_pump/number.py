@@ -129,6 +129,21 @@ class TuyaHeatpumpNumber(NumberEntity):
         return self.coordinator.device_info
 
     @property
+    def native_min_value(self) -> float:
+        """The minimum, per operating mode where the model gives one.
+
+        ``min_value_by_mode`` maps a raw ``mode`` value to the minimum the
+        device accepts in that mode: a water set-point that cools down to
+        a few degrees may still refuse anything under 25 °C while heating.
+        """
+        by_mode = self._config.get("min_value_by_mode")
+        if by_mode and self.coordinator.data:
+            mode = (self.coordinator.data.get("mode") or {}).get("value")
+            if mode in by_mode:
+                return float(by_mode[mode])
+        return self._attr_native_min_value
+
+    @property
     def native_value(self) -> float | None:
         """Return the current value."""
         if "field_index" in self._config:

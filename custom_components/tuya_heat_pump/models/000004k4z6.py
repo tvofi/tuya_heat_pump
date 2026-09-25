@@ -362,6 +362,9 @@ NUMBER_TYPES = {
         "icon": "mdi:thermostat",
         "unit": "°C",
         "min_value": 5.0,
+        # Heating water: the unit refuses anything under 25 °C in heating
+        # (it keeps the old value, @tvofi). The 5 °C floor is for cooling.
+        "min_value_by_mode": {"heat": 25.0, "HEATDHW": 25.0, "DHW": 25.0},
         "max_value": 65.0,
         "step": 1.0,
         "api_conversion": "int(value)",
