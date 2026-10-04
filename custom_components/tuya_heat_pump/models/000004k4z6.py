@@ -64,8 +64,9 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #     temperature template. It is the capacity demand in HPx10 (see the
 #     GCHV controller manual), exposed in HP without a unit. The
 #     "heating_output_estimate" sensor maps it to estimated thermal kW
-#     and "power_estimate" to an estimated electrical draw (÷ assumed
-#     COP), see their comments.
+#     and "power_estimate" to an estimated electrical draw (COP
+#     modelled from T4 and leaving-water temperature), see their
+#     comments.
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
 #     are E0..E9, P0..P5. The Fault Description sensor reports the codes
 #     only; look them up in the Windmi user manual's error table (the
@@ -264,20 +265,29 @@ SENSOR_TYPES = {
     },
     "power_estimate": {
         # Derived: electrical power-draw estimate = heating output
-        # divided by an assumed COP of 3.0. The real COP swings with
-        # outdoor and water temperature (roughly 2-4.5 on this unit),
-        # so treat this as indicative and adjust the divisor to taste.
-        # Same compressor-only blind spots as heating_output_estimate.
-        # Disabled by default because the COP is a guess, unlike the
-        # HP-based thermal estimate above.
+        # divided by a COP modelled from live conditions:
+        #   COP = 5.99 + 0.141*T4 - 0.07*Tout - 0.0016*T4*Tout
+        # least-squares fitted (rms 0.18 COP) to the official WIM140X3
+        # performance table's nominal-level heating grid (T4 -25..35,
+        # LWT 30..63; "Tabela wydajności" WIM140X3 R14), with T4 = dp 105
+        # and Tout = dp 106 standing in for the table's LWT. Clamped to
+        # 1..7 against extrapolation. Heating/DHW only: below 25 C
+        # leaving water (cooling) the value goes unknown, since the
+        # model has no EER terms. Real COP also depends on part load
+        # and defrost cycles, so expect ~10-15% scatter versus a meter.
+        # Same compressor-only blind spots as heating_output_estimate
+        # (dp 15 / dp 7 heaters and standby are invisible).
         "name": "Estimated Power Draw",
         "unit": "kW",
         "icon": "mdi:flash",
         "device_class": "power",
         "state_class": "measurement",
-        "formula": "POWER * 2.8 / 3.0",
+        "formula": (
+            "POWER * 2.8 / max(1.0, min(7.0, "
+            "5.99 + 0.141 * T4 - 0.07 * Tout - 0.0016 * T4 * Tout))"
+            " if Tout > 25 else None"
+        ),
         "precision": 2,
-        "enabled_default": False,
     },
     "WP_speed": {
         # 水泵档位 = water pump gear (level), no unit in the schema
