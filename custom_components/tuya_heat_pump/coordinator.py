@@ -1114,8 +1114,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # sonra tekrar açıldı" gibi görünen bir titreşime ve
                     # Activity geçmişinde yanlış/eksik bir olay sırasına
                     # yol açıyordu.
-                    if self.data is not None:
-                        self._optimistic_update(code, value)
+                    self._optimistic_update(code, value)
                     await asyncio.sleep(2)
                     await self.async_request_refresh()
                     return True
@@ -1161,8 +1160,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # titreşim görür. self.data burada hemen güncellenince bu
                 # titreşim tamamen ortadan kalkıyor; _apply_sent_cache zaten
                 # cihazdan gerçekten farklı bir echo gelirse bunu koruyor.
-                if self.data is not None:
-                    self._optimistic_update(code, value)
+                self._optimistic_update(code, value)
 
                 # Yeni debounce task oluştur
                 async def delayed_send():
