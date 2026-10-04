@@ -62,7 +62,15 @@ async def async_setup_entry(
         # A model file may decouple the dict key from the real Tuya code
         # (e.g. "fault_description" reading the "fault" DP) via "code".
         lookup_code = sensor_config.get("code", sensor_code)
-        if coordinator.data and lookup_code in coordinator.data:
+        if (
+            (coordinator.data and lookup_code in coordinator.data)
+            or coordinator.dp_known(sensor_config)
+        ):
+            # A DP the device's schema knows is created even when the
+            # first poll lacks it: the cloud shadow drops DPs the device
+            # has not re-reported lately (see coordinator.dp_known) and
+            # skipping the entity here would make it vanish for good on
+            # the next restart. It shows "unknown" until a value arrives.
             sensors.append(TuyaHeatpumpSensor(coordinator, sensor_code, sensor_config))
             _LOGGER.info("Adding sensor: %s (%s)", sensor_config.get('name', sensor_code), sensor_code)
         elif "formula" in sensor_config:
@@ -356,11 +364,16 @@ class TuyaHeatpumpSensor(SensorEntity):
                 raw_source in self.coordinator.data
             )
 
-        return (
+        if not (
             self.coordinator.last_update_success and
-            self.coordinator.data is not None and
-            self._lookup_code in self.coordinator.data
-        )
+            self.coordinator.data is not None
+        ):
+            return False
+        if self._lookup_code in self.coordinator.data:
+            return True
+        # DP the schema knows but the poll data currently lacks → keep
+        # the entity available with an unknown state (coordinator.dp_known).
+        return self.coordinator.dp_known(self._config)
 
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""

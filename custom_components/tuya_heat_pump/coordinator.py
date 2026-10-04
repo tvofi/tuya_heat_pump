@@ -465,6 +465,27 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             if code not in data
         ]
 
+    def dp_known(self, config: dict) -> bool:
+        """True when the device's own Tuya schema knows this entity's DP.
+
+        The cloud shadow (and local status frames) carry only DPs the
+        device has (re)reported lately: a rarely-changed setting can fall
+        out of coordinator.data — and out of the Tuya app's panel — while
+        the unit still fully supports the register (Rotenso Windmi dp 110
+        night_mode: last reported 2026-06-20, gone by Oct 2026). Entities
+        for DPs the schema knows stay available (state unknown) so they
+        come back with the next report; for a writable DP the write itself
+        is what makes the device report it again.
+
+        Only the schema qualifies — the model file alone does not, because
+        generic mappings list many DPs a given unit may not have. Raw-field
+        entities are excluded too: they decode a payload DP that must be
+        present for the value to mean anything."""
+        if not isinstance(config, dict) or "field_index" in config:
+            return False
+        dp_id = config.get("dp_id")
+        return dp_id is not None and dp_id in (self.device_schema or {})
+
     # ============================================================================
     # LOCAL LISTENER
     # ============================================================================
@@ -673,6 +694,29 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         bakmadan, sadece "bir şey değişti" sinyali olarak alıp tam bir
         API sorgusu tetikliyoruz."""
         await self.async_request_refresh()
+
+    def _optimistic_update(self, code: str, value: Any) -> None:
+        """Kabul edilmiş bir komutu cihaz yankısı beklemeden self.data'ya
+        yansıt.
+
+        Kod self.data'da HENÜZ yoksa da EKLER: Tuya'nın cloud shadow'u
+        sadece cihazın (yeniden) raporladığı DP'leri taşır — nadiren
+        değişen bir ayar shadow'dan tamamen düşebiliyor (Rotenso Windmi
+        dp 110 night_mode'da olduğu gibi: değer 2026-06-20'den beri hiç
+        raporlanmayınca önce Tuya app panelinden, sonra entity'den kayboldu).
+        Yazma başarılı olduğunda cihaz DP'yi yeniden raporlar; o ana kadar
+        değerin burada tutulması entity'yi kullanılabilir tutar."""
+        if self.data is None:
+            return
+        entry = dict(self.data.get(code) or {})
+        entry['value'] = value
+        entry['timestamp'] = int(time.time() * 1000)
+        if 'dp_id' not in entry:
+            dp_id = self.get_dp_id(code)
+            if dp_id is not None:
+                entry['dp_id'] = dp_id
+        self.data[code] = entry
+        self.async_update_listeners()
 
     def _apply_sent_cache(self, new_data: dict):
         """Gelen veride eski değer varsa, son gönderilen değeri zorla uygula."""
@@ -1070,10 +1114,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # sonra tekrar açıldı" gibi görünen bir titreşime ve
                     # Activity geçmişinde yanlış/eksik bir olay sırasına
                     # yol açıyordu.
-                    if self.data and code in self.data:
-                        self.data[code]['value'] = value
-                        self.data[code]['timestamp'] = int(time.time() * 1000)
-                        self.async_update_listeners()
+                    self._optimistic_update(code, value)
                     await asyncio.sleep(2)
                     await self.async_request_refresh()
                     return True
@@ -1119,10 +1160,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # titreşim görür. self.data burada hemen güncellenince bu
                 # titreşim tamamen ortadan kalkıyor; _apply_sent_cache zaten
                 # cihazdan gerçekten farklı bir echo gelirse bunu koruyor.
-                if self.data and code in self.data:
-                    self.data[code]['value'] = value
-                    self.data[code]['timestamp'] = int(time.time() * 1000)
-                    self.async_update_listeners()
+                self._optimistic_update(code, value)
 
                 # Yeni debounce task oluştur
                 async def delayed_send():

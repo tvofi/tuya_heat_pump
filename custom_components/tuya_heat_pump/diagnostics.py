@@ -67,6 +67,23 @@ def _mapping_summary(mapping: dict | None) -> dict[str, list[dict]]:
     return summary
 
 
+def _mapped_but_not_reported(mapping: dict | None, live: dict) -> list[str]:
+    """Entity-mapped codes (own DP or a raw source) that the device has
+    not reported — the signature of a cloud shadow / status frame that
+    dropped them, e.g. a setting that only reports on change (dp 110
+    night_mode on the Rotenso Windmi). Derived/formula entities without
+    a DP are skipped."""
+    codes: set[str] = set()
+    for category in ENTITY_CATEGORIES:
+        for key, cfg in (mapping or {}).get(category, {}).items():
+            if not isinstance(cfg, dict) or "field_index" in cfg:
+                continue
+            code = cfg.get("raw_source") or cfg.get("code", key)
+            if "dp_id" in cfg or cfg.get("raw_source"):
+                codes.add(code)
+    return sorted(code for code in codes if code not in live)
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
@@ -108,6 +125,7 @@ async def async_get_config_entry_diagnostics(
     result["entities"] = _mapping_summary(full_mapping)
     result["discovered"] = _mapping_summary(coordinator.discovered_mapping)
     result["unmapped_codes"] = coordinator.unmapped_dp_codes
+    result["mapped_but_not_reported"] = _mapped_but_not_reported(full_mapping, live)
     result["schema_not_reported"] = sorted(
         prop["code"] for prop in coordinator.device_schema.values()
         if prop["code"] not in live and prop["dp_id"] not in static_dp_ids
