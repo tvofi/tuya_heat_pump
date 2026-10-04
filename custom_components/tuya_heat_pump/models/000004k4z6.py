@@ -61,8 +61,12 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #     values are already in °C, no conversion needed.
 #   - POWER (dp 108) is named 能需 ("energy demand") in the Tuya schema,
 #     scale 1 (raw ÷ 10) and has no unit; its min/max are a copy of the
-#     temperature template. It is a load/demand level, not a metered
-#     electrical power, so it is exposed without a unit.
+#     temperature template. It is the capacity demand in HPx10 (see the
+#     GCHV controller manual), exposed in HP without a unit. The
+#     "heating_output_estimate" sensor maps it to estimated thermal kW
+#     and "power_estimate" to an estimated electrical draw (COP
+#     modelled from T4 and leaving-water temperature), see their
+#     comments.
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
 #     are E0..E9, P0..P5. The Fault Description sensor reports the codes
 #     only; look them up in the Windmi user manual's error table (the
@@ -238,6 +242,64 @@ SENSOR_TYPES = {
         "icon": "mdi:gauge",
         "state_class": "measurement",
         "conversion": "value / 10",
+    },
+    "heating_output_estimate": {
+        # Derived: dp 108 能需 is the capacity demand in HPx10 — per the
+        # GCHV wired-controller manual (query item 4 "Capacity of unit:
+        # HPx10", item 27 "Capacity demand", no unit given there), so
+        # this entity's value after the /10 conversion is demand in HP,
+        # maxing at the unit's rating (5.0 on the WIM140). Thermal
+        # output estimate = HP x (rated kW / rated HP): the WIM140 is
+        # 5 HP / 14 kW -> factor 2.8; other Windmi sizes should use
+        # rated_kW / rated_HP. In cooling mode the same factor
+        # approximates the cooling capacity. During reverse-cycle
+        # defrost (DEF / dp 102 true) no useful heat reaches the water,
+        # so the output drops to 0 for those minutes; DEF is
+        # report-on-change and can fall out of the cloud shadow when
+        # stale, so it defaults to "not defrosting". Refrigerant circuit
+        # only: the backup heater (dp 15), DHW tank heater (dp 7) and
+        # standby (~20-50 W) are invisible to it.
+        "name": "Estimated Heating Output",
+        "unit": "kW",
+        "icon": "mdi:radiator",
+        "device_class": "power",
+        "state_class": "measurement",
+        "formula": "(POWER * 2.8) * (1 - DEF)",
+        "formula_defaults": {"DEF": 0},
+        "precision": 2,
+    },
+    "power_estimate": {
+        # Derived: electrical power-draw estimate = heating output
+        # divided by a COP modelled from live conditions:
+        #   COP = 5.99 + 0.141*T4 - 0.07*Tout - 0.0016*T4*Tout
+        # least-squares fitted (rms 0.18 COP) to the official WIM140X3
+        # performance table's nominal-level heating grid (T4 -25..35,
+        # LWT 30..63; "Tabela wydajności" WIM140X3 R14), with T4 = dp 105
+        # and Tout = dp 106 standing in for the table's LWT. Clamped to
+        # 1..7 against extrapolation. Heating/DHW only: below 25 C
+        # leaving water (cooling) the value goes unknown, since the
+        # model has no EER terms — except during defrost (DEF / dp 102
+        # true), when leaving water sags but the unit keeps drawing
+        # power: the estimate then holds at the max-level input, a
+        # consistent ~1.15x the nominal PI at every operating point of
+        # the same table. DEF is report-on-change and can fall out of
+        # the cloud shadow when stale, defaulting to "not defrosting".
+        # Real COP also depends on part load, so expect ~10-15%
+        # scatter versus a meter. Same compressor-only blind spots as
+        # heating_output_estimate (dp 15 / dp 7 heaters and standby
+        # are invisible).
+        "name": "Estimated Power Draw",
+        "unit": "kW",
+        "icon": "mdi:flash",
+        "device_class": "power",
+        "state_class": "measurement",
+        "formula": (
+            "(POWER * 2.8 / max(1.0, min(7.0, "
+            "5.99 + 0.141 * T4 - 0.07 * Tout - 0.0016 * T4 * Tout))"
+            " * (1.15 if DEF else 1)) if (Tout > 25 or DEF) else None"
+        ),
+        "formula_defaults": {"DEF": 0},
+        "precision": 2,
     },
     "WP_speed": {
         # 水泵档位 = water pump gear (level), no unit in the schema

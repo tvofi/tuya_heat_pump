@@ -138,7 +138,13 @@ class TuyaHeatpumpSensor(SensorEntity):
         if lookup not in self.coordinator.data:
             return None
         raw_value = self.coordinator.data[lookup].get('value')
-        if raw_value is None or isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+        if raw_value is None:
+            return None
+        # Boolean DPs (e.g. DEF / dp 102 defrosting) are usable formula
+        # inputs as 0/1; other non-numeric values are not.
+        if isinstance(raw_value, bool):
+            raw_value = int(raw_value)
+        elif not isinstance(raw_value, (int, float)):
             return None
         try:
             result = Conversion(config.get('conversion', 'value')).convert(raw_value)
@@ -168,8 +174,15 @@ class TuyaHeatpumpSensor(SensorEntity):
             names = [n for n in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", formula)
                      if n not in ("abs", "min", "max", "round", "and", "or", "not", "if", "else", "None")]
         namespace = {}
+        # A config may give a fallback for an input whose DP is missing
+        # from the poll data (report-on-change DPs fall out of the cloud
+        # shadow when stale — e.g. DEF/dp 102 in summer: default 0,
+        # "not defrosting", rather than unknown the whole season).
+        defaults = self._config.get("formula_defaults", {})
         for name in names:
             value = self._converted_value_of(name)
+            if value is None:
+                value = defaults.get(name)
             if value is None:
                 return None
             namespace[name] = value
@@ -342,6 +355,8 @@ class TuyaHeatpumpSensor(SensorEntity):
 
         if "formula" in self._config:
             attrs["formula"] = self._config["formula"]
+        if "formula_defaults" in self._config:
+            attrs["formula_defaults"] = dict(self._config["formula_defaults"])
 
         if self.coordinator.model_id:
             attrs["tuya_model_id"] = self.coordinator.model_id
