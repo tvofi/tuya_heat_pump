@@ -61,10 +61,11 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #     values are already in °C, no conversion needed.
 #   - POWER (dp 108) is named 能需 ("energy demand") in the Tuya schema,
 #     scale 1 (raw ÷ 10) and has no unit; its min/max are a copy of the
-#     temperature template. It is a load/demand level, not a metered
-#     electrical power, so it is exposed without a unit. The
-#     "power_estimate" sensor maps it to an estimated kW draw
-#     (calibrated against the utility meter, see its comment).
+#     temperature template. It is the capacity demand in HPx10 (see the
+#     GCHV controller manual), exposed in HP without a unit. The
+#     "heating_output_estimate" sensor maps it to estimated thermal kW
+#     and "power_estimate" to an estimated electrical draw (÷ assumed
+#     COP), see their comments.
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
 #     are E0..E9, P0..P5. The Fault Description sensor reports the codes
 #     only; look them up in the Windmi user manual's error table (the
@@ -241,24 +242,42 @@ SENSOR_TYPES = {
         "state_class": "measurement",
         "conversion": "value / 10",
     },
+    "heating_output_estimate": {
+        # Derived: dp 108 能需 is the capacity demand in HPx10 — per the
+        # GCHV wired-controller manual (query item 4 "Capacity of unit:
+        # HPx10", item 27 "Capacity demand", no unit given there), so
+        # this entity's value after the /10 conversion is demand in HP,
+        # maxing at the unit's rating (5.0 on the WIM140). Thermal
+        # output estimate = HP x (rated kW / rated HP): the WIM140 is
+        # 5 HP / 14 kW -> factor 2.8; other Windmi sizes should use
+        # rated_kW / rated_HP. In cooling mode the same factor
+        # approximates the cooling capacity. Refrigerant circuit only:
+        # the backup heater (dp 15), DHW tank heater (dp 7) and standby
+        # (~20-50 W) are invisible to it.
+        "name": "Estimated Heating Output",
+        "unit": "kW",
+        "icon": "mdi:radiator",
+        "device_class": "power",
+        "state_class": "measurement",
+        "formula": "POWER * 2.8",
+        "precision": 2,
+    },
     "power_estimate": {
-        # Derived: dp 108 能需 mapped to an estimated electrical power
-        # draw in kW. dp 108 is an internal demand index, not a physical
-        # unit: on the WIM140 a reading of 3.6 coincided with ~6 kW at
-        # the utility meter, which rules out thermal kW (COP would be
-        # 0.6) and %-of-rated (COP 0.84). Single-point linear
-        # calibration through the origin: kW = 1.67 x POWER. Refine by
-        # taking paired readings (utility meter vs this entity) at
-        # different demand levels and adjusting the factor. The estimate
-        # tracks the compressor only: it does not see the backup heater
-        # (dp 15), the DHW tank heater (dp 7) or standby (~20-50 W).
+        # Derived: electrical power-draw estimate = heating output
+        # divided by an assumed COP of 3.0. The real COP swings with
+        # outdoor and water temperature (roughly 2-4.5 on this unit),
+        # so treat this as indicative and adjust the divisor to taste.
+        # Same compressor-only blind spots as heating_output_estimate.
+        # Disabled by default because the COP is a guess, unlike the
+        # HP-based thermal estimate above.
         "name": "Estimated Power Draw",
         "unit": "kW",
         "icon": "mdi:flash",
         "device_class": "power",
         "state_class": "measurement",
-        "formula": "POWER * 1.67",
+        "formula": "POWER * 2.8 / 3.0",
         "precision": 2,
+        "enabled_default": False,
     },
     "WP_speed": {
         # 水泵档位 = water pump gear (level), no unit in the schema
