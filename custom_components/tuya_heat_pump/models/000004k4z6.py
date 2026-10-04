@@ -343,6 +343,16 @@ SWITCH_TYPES = {
         "entity_category": "config",
     },
     "night_mode": {
+        # Tuya name 夜间模式 = night (silent) mode. The unit reports this
+        # DP only on change: its shadow entry was last refreshed
+        # 2026-06-20 and by Oct 2026 it had fallen out of the cloud
+        # shadow entirely — the toggle vanished from the Tuya app panel
+        # and the switch went unavailable in HA. The DP is rw in the
+        # thing model, so writing it once (this switch, or the write_dp
+        # service) makes the device report it again. Entities for DPs
+        # the schema knows stay available (state "unknown") while their
+        # value is missing from the poll data, so this recovery works
+        # from HA (see coordinator.dp_known).
         "dp_id": 110,
         "code": "night_mode",
         "name": "Night Mode (Silent)",

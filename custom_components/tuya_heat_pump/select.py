@@ -264,11 +264,16 @@ class TuyaHeatpumpSelect(SelectEntity):
                 raw_source in self.coordinator.data
             )
 
-        return (
+        if not (
             self.coordinator.last_update_success and
-            self.coordinator.data is not None and
-            self._lookup_code in self.coordinator.data
-        )
+            self.coordinator.data is not None
+        ):
+            return False
+        if self._lookup_code in self.coordinator.data:
+            return True
+        # DP the schema knows but the poll data currently lacks → keep
+        # the entity available with an unknown state (coordinator.dp_known).
+        return self.coordinator.dp_known(self._config)
 
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""

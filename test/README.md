@@ -23,6 +23,7 @@ None of these are part of the Home Assistant integration itself — they're run 
 | 📡 | [`tuya_dps_explorer.py`](#-3-tuya_dps_explorerpy) | Read raw values over LAN | `tinytuya` |
 | 🧩 | [`raw_explorer.py`](#-4-raw_explorerpy) | Decode hidden raw data-points (GUI) | none (self-installs) |
 | 🔎 | [`discovery_preview.py`](#-5-discovery_previewpy) | Preview auto-discovered entities from a dump | none |
+| 🧪 | [`dp_liveness_check.py`](#-6-dp_liveness_checkpy) | Behavioral check: entities survive DPs missing from the poll | none (stubs HA) |
 
 <br>
 
@@ -156,6 +157,31 @@ Full walkthrough: [docs/MAPPING_REGISTERS.md](https://github.com/Korkuttum/tuya_
 | 3 | Live codes that would still be unmapped, and schema DPs the device never reported (e.g. a `timer` raw DP with no value) |
 
 📎 [**View script →**](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/discovery_preview.py)
+
+</details>
+
+<br>
+
+<details>
+<summary><h3>🧪 6. <code>dp_liveness_check.py</code></h3><sub>Offline behavioral check that entities survive data points the cloud shadow / status frames drop.</sub></summary>
+
+Runs the integration's entity platforms outside Home Assistant (HA, tinytuya and requests are stubbed) and verifies the "DP liveness" behavior added after the Rotenso Windmi dp 110 `night_mode` incident — a DP the device only reports on change fell out of Tuya's cloud shadow, and the entity went unavailable:
+
+| | |
+|:---:|---|
+| 1 | Entities for DPs the device's own schema vouches for stay **available** (state *unknown*) when the poll data lacks them — instead of unavailable |
+| 2 | Sensors / binary sensors are still **created** at setup when the first poll lacks a schema-known DP |
+| 3 | An accepted write immediately inserts/updates the value in the coordinator, so the entity becomes usable and the write itself makes the device re-report the DP |
+| 4 | Diagnostics list entity-mapped codes the device has not reported (`mapped_but_not_reported`) |
+| 5 | Null controls (no data / no schema / no dp_id) and regressions of earlier beta features (calibration offsets, min-by-mode setpoint) |
+
+Point it at any (e.g. mutated) copy of the integration to use it as a mutation killer:
+
+```bash
+python3 test/dp_liveness_check.py path/to/a/copy/of/tuya_heat_pump
+```
+
+📎 [**View script →**](https://github.com/Korkuttum/tuya_heat_pump/blob/main/test/dp_liveness_check.py)
 
 </details>
 

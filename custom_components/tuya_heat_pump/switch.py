@@ -253,11 +253,21 @@ class TuyaHeatpumpSwitch(SwitchEntity):
                 raw_source in self.coordinator.data
             )
 
-        return (
-            self.coordinator.last_update_success and 
-            self.coordinator.data is not None and
-            self._lookup_code in self.coordinator.data
-        )
+        if not (
+            self.coordinator.last_update_success and
+            self.coordinator.data is not None
+        ):
+            return False
+        if self._lookup_code in self.coordinator.data:
+            return True
+        # No value in the poll data (yet). A DP the device's schema knows
+        # still exists is no reason to go unavailable: the Tuya cloud
+        # shadow only carries DPs the device re-reported lately, so a
+        # rarely-changed setting can fall out of the shadow entirely
+        # (dp 110 night_mode on the Rotenso Windmi did exactly that).
+        # The switch stays usable — writing the DP is what makes the
+        # device report it again — and shows "unknown" until then.
+        return self.coordinator.dp_known(self._config)
 
     async def async_added_to_hass(self) -> None:
         """When entity is added to hass."""
