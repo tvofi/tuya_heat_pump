@@ -62,7 +62,9 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #   - POWER (dp 108) is named 能需 ("energy demand") in the Tuya schema,
 #     scale 1 (raw ÷ 10) and has no unit; its min/max are a copy of the
 #     temperature template. It is a load/demand level, not a metered
-#     electrical power, so it is exposed without a unit.
+#     electrical power, so it is exposed without a unit. The
+#     "power_estimate" sensor maps it to an estimated kW draw
+#     (calibrated against the utility meter, see its comment).
 #   - fault (dp 20) is a 16-bit bitmap whose labels in the Tuya schema
 #     are E0..E9, P0..P5. The Fault Description sensor reports the codes
 #     only; look them up in the Windmi user manual's error table (the
@@ -238,6 +240,25 @@ SENSOR_TYPES = {
         "icon": "mdi:gauge",
         "state_class": "measurement",
         "conversion": "value / 10",
+    },
+    "power_estimate": {
+        # Derived: dp 108 能需 mapped to an estimated electrical power
+        # draw in kW. dp 108 is an internal demand index, not a physical
+        # unit: on the WIM140 a reading of 3.6 coincided with ~6 kW at
+        # the utility meter, which rules out thermal kW (COP would be
+        # 0.6) and %-of-rated (COP 0.84). Single-point linear
+        # calibration through the origin: kW = 1.67 x POWER. Refine by
+        # taking paired readings (utility meter vs this entity) at
+        # different demand levels and adjusting the factor. The estimate
+        # tracks the compressor only: it does not see the backup heater
+        # (dp 15), the DHW tank heater (dp 7) or standby (~20-50 W).
+        "name": "Estimated Power Draw",
+        "unit": "kW",
+        "icon": "mdi:flash",
+        "device_class": "power",
+        "state_class": "measurement",
+        "formula": "POWER * 1.67",
+        "precision": 2,
     },
     "WP_speed": {
         # 水泵档位 = water pump gear (level), no unit in the schema
