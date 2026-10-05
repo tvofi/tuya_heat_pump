@@ -276,16 +276,17 @@ SENSOR_TYPES = {
         # performance table's nominal-level heating grid (T4 -25..35,
         # LWT 30..63; "Tabela wydajności" WIM140X3 R14), with T4 = dp 105
         # and Tout = dp 106 standing in for the table's LWT. Clamped to
-        # 1..7 against extrapolation. Heating/DHW only: below 25 C
-        # leaving water (cooling) the value goes unknown, since the
-        # model has no EER terms — except during defrost (DEF / dp 102
-        # true), when leaving water sags but the unit keeps drawing
-        # power: the estimate then holds at the max-level input, a
-        # consistent ~1.15x the nominal PI at every operating point of
-        # the same table. DEF is report-on-change and can fall out of
-        # the cloud shadow when stale, defaulting to "not defrosting".
-        # Real COP also depends on part load, so expect ~10-15%
-        # scatter versus a meter. Same compressor-only blind spots as
+        # 1..7 against extrapolation. The fit has no EER terms, so
+        # cooling (mode / dp 2 == cool) stays unknown — except during
+        # defrost (DEF / dp 102), when the estimate holds at the
+        # max-level input, a consistent ~1.15x the nominal PI. heat /
+        # DHW / HEATDHW always estimate: the heating setpoint floor is
+        # 25 °C, so Tout <= 25 is normal in those modes and is not a
+        # cooling signal. COOLDHW, and a mode absent from the poll
+        # (default None), keep the Tout > 25 test. DEF defaults to not
+        # defrosting when that DP has left the cloud shadow. Real COP
+        # also depends on part load, so expect ~10-15% scatter versus
+        # a meter. Same compressor-only blind spots as
         # heating_output_estimate (dp 15 / dp 7 heaters and standby
         # are invisible).
         "name": "Estimated Power Draw",
@@ -296,9 +297,12 @@ SENSOR_TYPES = {
         "formula": (
             "(POWER * 2.8 / max(1.0, min(7.0, "
             "5.99 + 0.141 * T4 - 0.07 * Tout - 0.0016 * T4 * Tout))"
-            " * (1.15 if DEF else 1)) if (Tout > 25 or DEF) else None"
+            " * (1.15 if DEF else 1)) if ("
+            "mode in ('heat', 'DHW', 'HEATDHW') or "
+            "(mode == 'COOLDHW' and Tout > 25) or "
+            "(mode is None and Tout > 25) or DEF) else None"
         ),
-        "formula_defaults": {"DEF": 0},
+        "formula_defaults": {"DEF": 0, "mode": None},
         "precision": 2,
     },
     "WP_speed": {
