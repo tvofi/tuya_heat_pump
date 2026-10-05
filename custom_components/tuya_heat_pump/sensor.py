@@ -141,15 +141,20 @@ class TuyaHeatpumpSensor(SensorEntity):
         if raw_value is None:
             return None
         # Boolean DPs (e.g. DEF / dp 102 defrosting) are usable formula
-        # inputs as 0/1; other non-numeric values are not.
+        # inputs as 0/1. Strings pass through (enum keys such as mode).
         if isinstance(raw_value, bool):
             raw_value = int(raw_value)
-        elif not isinstance(raw_value, (int, float)):
+        elif not isinstance(raw_value, (int, float, str)):
             return None
         try:
             result = Conversion(config.get('conversion', 'value')).convert(raw_value)
         except Exception:
             return None
+        # Enum keys (operation mode) are formula inputs. Arithmetic
+        # formulas still only accept numbers; a string makes eval fail
+        # closed and the sensor reads unknown.
+        if isinstance(result, str):
+            return result
         if not isinstance(result, (int, float)):
             return None
         # A calibration on an input sensor must carry into derived formula
@@ -169,10 +174,13 @@ class TuyaHeatpumpSensor(SensorEntity):
         formula = self._config.get("formula")
         names = self._config.get("formula_inputs")
         if not names:
-            # Pull identifiers straight out of the expression.
+            # Pull identifiers straight out of the expression. Quoted
+            # strings (enum keys) and keywords are not sensor codes.
             import re
-            names = [n for n in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", formula)
-                     if n not in ("abs", "min", "max", "round", "and", "or", "not", "if", "else", "None")]
+            scanned = re.sub(r"'[^\']*'|\"[^\"]*\"", " ", formula)
+            names = [n for n in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", scanned)
+                     if n not in ("abs", "min", "max", "round", "and", "or", "not",
+                                  "if", "else", "None", "True", "False", "is", "in")]
         namespace = {}
         # A config may give a fallback for an input whose DP is missing
         # from the poll data (report-on-change DPs fall out of the cloud
@@ -182,9 +190,12 @@ class TuyaHeatpumpSensor(SensorEntity):
         for name in names:
             value = self._converted_value_of(name)
             if value is None:
-                value = defaults.get(name)
-            if value is None:
-                return None
+                if name not in defaults:
+                    return None
+                # None is a real default: the input is absent and the
+                # formula can test for that (mode is None when the
+                # report-on-change DP has left the cloud shadow).
+                value = defaults[name]
             namespace[name] = value
         try:
             result = eval(
