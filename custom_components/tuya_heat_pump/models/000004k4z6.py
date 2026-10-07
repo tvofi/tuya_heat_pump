@@ -418,8 +418,11 @@ SWITCH_TYPES = {
         # service) makes the device report it again. Entities for DPs
         # the schema knows stay available (state "unknown") while their
         # value is missing from the poll data, so this recovery works
-        # from HA (see coordinator.dp_known).
+        # from HA (see coordinator.dp_known). always_available keeps it
+        # usable even without a cached schema, and cloud polls keep the
+        # last-known value after a write (coordinator._carry_forward_missing).
         "dp_id": 110,
+        "always_available": True,
         "code": "night_mode",
         "name": "Night Mode (Silent)",
         "icon": "mdi:weather-night",
