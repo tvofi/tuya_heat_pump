@@ -483,6 +483,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         present for the value to mean anything."""
         if not isinstance(config, dict) or "field_index" in config:
             return False
+        # Model files can vouch for a DP themselves when the schema is not
+        # available (discovery off, schema fetch failed).
+        if config.get("always_available") and config.get("dp_id") is not None:
+            return True
         dp_id = config.get("dp_id")
         return dp_id is not None and dp_id in (self.device_schema or {})
 
@@ -717,6 +721,20 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 entry['dp_id'] = dp_id
         self.data[code] = entry
         self.async_update_listeners()
+
+    def _carry_forward_missing(self, new_data: dict) -> None:
+        """Keep last-known values of entity DPs the new cloud poll lacks.
+
+        The cloud shadow drops DPs the device has not re-reported lately
+        (Rotenso Windmi dp 110 night_mode reports only right after it is
+        written). Replacing coordinator.data wholesale made such a value
+        vanish on the very next poll, so the entity flipped back to
+        unknown/unavailable. Mapped codes we already know a value for are
+        kept until the device reports a new one. Local polls already merge
+        (see _process_local_dps)."""
+        for code, entry in (self.data or {}).items():
+            if code not in new_data and code in self.dp_mapping.values():
+                new_data[code] = entry
 
     def _apply_sent_cache(self, new_data: dict):
         """Gelen veride eski değer varsa, son gönderilen değeri zorla uygula."""
@@ -1325,6 +1343,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                         dp_id = prop.get('dp_id')
                         if dp_id is not None:
                             self.raw_code_by_dp_id[dp_id] = code
+                self._carry_forward_missing(data)
                 self._apply_sent_cache(data)
                 return data
                

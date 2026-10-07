@@ -247,6 +247,18 @@ def check_all(mods):
     # null controls
     record("dp_known: config=None", make_coord(Coord).dp_known(None) is False)
     record("dp_known: schema=None", make_coord(Coord, schema=None).dp_known({"dp_id": 110}) is False)
+    record("dp_known: always_available without schema",
+           make_coord(Coord, schema={}).dp_known({"dp_id": 110, "always_available": True}) is True)
+
+    # ---- cloud poll keeps last-known values of dropped DPs ----------------
+    co_cf = make_coord(Coord, data={"night_mode": {"value": True}, "gone": {"value": 1}})
+    fresh = {"temp_set": {"value": 30}}
+    co_cf._carry_forward_missing(fresh)
+    record("carry-forward: dropped mapped DP kept", fresh.get("night_mode") == {"value": True})
+    record("carry-forward: unmapped code not kept", "gone" not in fresh)
+    fresh2 = {"night_mode": {"value": False}}
+    co_cf._carry_forward_missing(fresh2)
+    record("carry-forward: new report wins", fresh2["night_mode"]["value"] is False)
 
     # ---- switch ------------------------------------------------------------
     switch_py = mods["switch"]

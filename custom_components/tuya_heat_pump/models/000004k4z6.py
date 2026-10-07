@@ -418,7 +418,9 @@ SWITCH_TYPES = {
         # service) makes the device report it again. Entities for DPs
         # the schema knows stay available (state "unknown") while their
         # value is missing from the poll data, so this recovery works
-        # from HA (see coordinator.dp_known).
+        # from HA (see coordinator.dp_known). always_available (set for
+        # every setting at the end of this file) keeps it usable even
+        # without a cached schema.
         "dp_id": 110,
         "code": "night_mode",
         "name": "Night Mode (Silent)",
@@ -476,3 +478,12 @@ SELECT_TYPES = {
         },
     },
 }
+
+# Every setting above (switch / number / select) is a schema DP of this
+# unit, and several are reported only on change (dp 110 night_mode only
+# right after a write). Keep them available even while the value is
+# missing and no schema is cached — writing is what brings them back.
+# Sensors are left alone so a dropped reading still shows as such.
+for _settings in (SWITCH_TYPES, NUMBER_TYPES, SELECT_TYPES):
+    for _config in _settings.values():
+        _config["always_available"] = True
