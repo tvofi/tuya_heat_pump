@@ -16,6 +16,7 @@ _MODEL_SOURCE: dict[str, str] = {}
 
 def clear_model_cache(model_id: str | None = None) -> None:
     """Drop cached model mapping(s) so the next load re-reads the file.
+    None means the default model; "*" clears everything.
 
     _MODEL_CACHE alone is not enough: sys.modules still holds the imported
     model module, and importlib.import_module() would return it as-is.
@@ -23,12 +24,19 @@ def clear_model_cache(model_id: str | None = None) -> None:
     """
     prefix = f"{__package__}.models."
     if model_id is None:
+        model_id = "default"
+    if model_id == "*":
         _MODEL_CACHE.clear()
         for name in [n for n in sys.modules if n.startswith(prefix)]:
             del sys.modules[name]
         return
-    _MODEL_CACHE.pop(model_id, None)
-    sys.modules.pop(_MODEL_SOURCE.pop(model_id, f"{prefix}{model_id}"), None)
+    source = _MODEL_SOURCE.get(model_id, f"{prefix}{model_id}")
+    # Every cached id backed by the same module (e.g. several unknown ids
+    # all falling back to models.default) goes stale together.
+    for key in [k for k, v in _MODEL_SOURCE.items() if v == source] + [model_id]:
+        _MODEL_CACHE.pop(key, None)
+        _MODEL_SOURCE.pop(key, None)
+    sys.modules.pop(source, None)
     sys.modules.pop(f"{prefix}{model_id}", None)
 
 

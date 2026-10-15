@@ -167,6 +167,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         self._heartbeat_task = None
         self._fallback_poll_task = None
         self._start_listener_task = None
+        # Shutdown state (see async_close_local).
+        self._closing = False
+        self._local_closed = False
+        self._sending_codes: set[str] = set()
         # Debounce için (local)
         self._pending_commands = {}  # code → (value, task)
         self._debounce_delay = 1.0   # 1 saniye
@@ -526,6 +530,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 "receive()/status() çağrısı meşgul tutuyor)"
             )
         try:
+            self._raise_if_closed()
             return self.local_device.status()
         finally:
             self._local_socket_lock.release()
@@ -538,6 +543,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (receive)")
         try:
+            self._raise_if_closed()
             return self.local_device.receive()
         finally:
             self._local_socket_lock.release()
@@ -557,6 +563,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (heartbeat)")
         try:
+            self._raise_if_closed()
             return self.local_device.heartbeat(nowait=False)
         finally:
             self._local_socket_lock.release()
@@ -569,6 +576,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (updatedps)")
         try:
+            self._raise_if_closed()
             return self.local_device.updatedps(dp_ids)
         finally:
             self._local_socket_lock.release()
@@ -583,11 +591,31 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             if not self._local_socket_lock.acquire(timeout=10):
                 raise TimeoutError(f"Local socket lock alınamadı (set_value dp {dp_id})")
             try:
+                self._raise_if_closed()
                 return self.local_device.set_value(dp_id, value)
             finally:
                 self._local_socket_lock.release()
         finally:
             self._write_pending.clear()
+
+    def _raise_if_closed(self) -> None:
+        """Called inside every locked wrapper: once the socket is closed, a
+        late executor job must not reconnect it (tinytuya reconnects a
+        persistent device on use)."""
+        if self._local_closed:
+            raise ConnectionError("Local connection closed")
+
+    def _local_close(self) -> None:
+        """Close the persistent socket under the socket lock, so no
+        receive()/set_value() is inside tinytuya while it closes."""
+        acquired = self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT)
+        try:
+            self._local_closed = True
+            if self.local_device is not None:
+                self.local_device.close()
+        finally:
+            if acquired:
+                self._local_socket_lock.release()
 
     def cancel_background_tasks(self) -> None:
         """Cancel the local listener/heartbeat/fallback-poll tasks.
@@ -618,30 +646,44 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         waiting (so a change made just before a reload is not lost), stop
         the background tasks and close the persistent socket. Safe in
         cloud mode and when called more than once."""
+        # New writes are refused from here on (send_command returns False).
+        self._closing = True
         if self.connection_type != "cloud" and getattr(self, "local_device", None):
+            in_flight = []
+            flushes = []
             for code, (value, task) in list(self._pending_commands.items()):
                 if task.done():
+                    continue
+                if code in self._sending_codes:
+                    # Already handed to the device: wait for it, don't resend.
+                    in_flight.append(task)
                     continue
                 task.cancel()
                 dp_id = next((d for d, c in self.dp_mapping.items() if c == code), None)
                 if dp_id is None:
+                    _LOGGER.warning("Pending write %s = %s dropped on shutdown: unknown DP", code, value)
                     continue
-                try:
-                    await asyncio.wait_for(
-                        self.hass.async_add_executor_job(self._local_set_value, dp_id, value),
-                        timeout=5,
-                    )
-                    _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
-                except Exception as err:
-                    _LOGGER.warning("Pending write %s = %s lost on shutdown: %s", code, value, err)
+                flushes.append(self._async_flush_write(code, dp_id, value))
+            if flushes or in_flight:
+                # One overall deadline, longer than set_value's 10 s lock wait.
+                await asyncio.wait(
+                    [asyncio.ensure_future(f) for f in flushes] + in_flight,
+                    timeout=12,
+                )
         self.cancel_background_tasks()
-        device = getattr(self, "local_device", None)
-        if device is not None:
-            self.local_device = None
+        if getattr(self, "local_device", None) is not None:
             try:
-                await self.hass.async_add_executor_job(device.close)
+                await self.hass.async_add_executor_job(self._local_close)
             except Exception:  # best effort; GC closes it otherwise
                 pass
+            self.local_device = None
+
+    async def _async_flush_write(self, code: str, dp_id: int, value: Any) -> None:
+        try:
+            await self.hass.async_add_executor_job(self._local_set_value, dp_id, value)
+            _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
+        except Exception as err:
+            _LOGGER.warning("Pending write %s = %s lost on shutdown: %s", code, value, err)
 
     async def _async_start_listener(self):
         """Start the background listener for instant updates.
@@ -1184,7 +1226,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             self._build_dp_mapping()
             _LOGGER.info("Cached model %s kept (schema fetch will be retried next start)", self.model_id)
             return {}
-        self.model_mapping = load_model_mapping("default")
+        self.model_mapping = await async_load_model_mapping(self.hass, "default")
         self._build_dp_mapping()
         _LOGGER.info("Default model mapping yüklendi - %d DP tanımlı", len(self.dp_mapping))
         return {}
@@ -1203,7 +1245,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             for key, cfg in (self.model_mapping.get(entity_type) or {}).items():
                 if 'field_index' in cfg:
                     continue
-                if cfg.get('code', key) == code:
+                if cfg.get('code', key) != code:
+                    continue
+                # A read-only sensor may share the code of the writable
+                # number; for api_conversion, look past entries without it.
+                if field == 'conversion' or field in cfg:
                     return cfg.get(field)
         return None
 
@@ -1258,6 +1304,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         _resolve_cache_value), or the entity briefly shows the wire value
         and _apply_sent_cache rejects the correct echo as stale.
         """
+        if self._closing:
+            _LOGGER.warning("Write %s = %s refused: connection is shutting down", code, value)
+            return False
         if display_value is None:
             display_value = value
         # HA'nın NumberEntity.async_set_native_value'su HER ZAMAN float
@@ -1391,6 +1440,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # Yeni debounce task oluştur
                 async def delayed_send():
                     await asyncio.sleep(self._debounce_delay)
+                    self._sending_codes.add(code)
                     try:
                         result = await self.hass.async_add_executor_job(
                             self._local_set_value, dp_id, value
@@ -1402,6 +1452,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     except Exception as err:
                         _LOGGER.error("Debounce gönderme hatası %s = %s: %s", code, value, err)
                     finally:
+                        self._sending_codes.discard(code)
                         if code in self._pending_commands:
                             del self._pending_commands[code]
                

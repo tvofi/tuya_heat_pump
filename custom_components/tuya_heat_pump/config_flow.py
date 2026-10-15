@@ -584,19 +584,11 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
                         CONF_PROTOCOL: user_input[CONF_PROTOCOL],
                     })
 
-                    # ConfigEntry'i güncelle. The options save below
-                    # reloads the entry anyway; skip the reload this data
-                    # update would trigger so it happens once, not twice.
-                    coordinator = self.hass.data.get(DOMAIN, {}).get(
-                        self._config_entry.entry_id
-                    )
-                    if coordinator is not None:
-                        coordinator.skip_next_reload = True
-                    if not self.hass.config_entries.async_update_entry(
+                    # ConfigEntry'i güncelle
+                    self.hass.config_entries.async_update_entry(
                         self._config_entry,
                         data=updated_data
-                    ) and coordinator is not None:
-                        coordinator.skip_next_reload = False
+                    )
 
                     # Connection details live in entry.data (above). Keep
                     # every existing option (climate settings included) and
