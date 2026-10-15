@@ -206,7 +206,9 @@ class TuyaHeatpumpNumber(NumberEntity):
                 api_value,
             )
         else:
-            success = await self.coordinator.send_command(self._lookup_code, api_value)
+            success = await self.coordinator.send_command(
+                self._lookup_code, api_value, display_value=value,
+            )
         
         if success:
             _LOGGER.info("✅ Successfully set %s to %s", self._number_code, value)

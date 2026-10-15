@@ -8,6 +8,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import TuyaScaleDataUpdateCoordinator
+from .model_loader import clear_model_cache
 from .services import async_setup_services, async_unload_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,10 +59,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # mapping.
             coordinator.apply_discovery()
     except asyncio.TimeoutError as err:
+        # Local mode started its listener/heartbeat/poll tasks in the
+        # coordinator's __init__; HA's retry builds a new coordinator, so
+        # stop this attempt's tasks or they pile up (one socket each).
+        coordinator.cancel_background_tasks()
         raise ConfigEntryNotReady(
             f"Tuya Heat Pump setup timed out after {SETUP_TIMEOUT}s "
             f"(device_id={coordinator.device_id}, elapsed={_elapsed():.1f}s) — will retry"
         ) from err
+    except BaseException:
+        coordinator.cancel_background_tasks()
+        raise
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
@@ -108,9 +116,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         coordinator: TuyaScaleDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator.cancel_background_tasks()
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         hass.data[DOMAIN].pop(entry.entry_id)
+        # Re-read an edited model file on the next setup instead of only
+        # after a full HA restart.
+        clear_model_cache(coordinator.model_id)
         if not hass.data[DOMAIN]:
             async_unload_services(hass)
 
