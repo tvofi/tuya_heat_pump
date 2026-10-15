@@ -436,7 +436,7 @@ async def validate_input(hass: HomeAssistant, data: dict, connection_type: str) 
         },
     )()
 
-    coordinator = TuyaScaleDataUpdateCoordinator(hass, mock_config)
+    coordinator = TuyaScaleDataUpdateCoordinator(hass, mock_config, start_local=False)
     # Local mode starts listener/heartbeat/poll tasks (one socket each)
     # in __init__; this throwaway coordinator must not leave them behind.
     try:

@@ -56,6 +56,8 @@ CONF_CACHED_TOKEN_EXPIRES_AT = "cached_token_expires_at"
 # cached_model_id so that restarts do not need the cloud to know the
 # device's register map. See discovery.py.
 CONF_CACHED_MODEL_SCHEMA = "cached_model_schema"
+CONF_CACHED_MODEL_ID = "cached_model_id"
+CONF_CACHED_MODEL_DEVICE_ID = "cached_model_device_id"
 
 # Live register discovery: expose every data point the device reports
 # that the static model file does not cover (see discovery.py). Stored
