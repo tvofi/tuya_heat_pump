@@ -12,6 +12,7 @@ from .const import DOMAIN
 from .conversion import Conversion
 from .coordinator import TuyaScaleDataUpdateCoordinator
 from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
+from .raw_codec import decode_raw_field, resolve_raw_source, watch_pending_raw_entities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ async def async_setup_entry(
     coordinator: TuyaScaleDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
     
     binary_sensors = []
+    pending = []
     
     # Online status binary sensor - HER ZAMAN EKLE
     binary_sensors.append(TuyaHeatpumpOnlineSensor(coordinator))
@@ -33,6 +35,15 @@ async def async_setup_entry(
     binary_sensor_configs = coordinator.model_mapping.get("binary_sensors", {})
     
     for sensor_code, sensor_config in binary_sensor_configs.items():
+        # Raw-field binary sensor: value is one field of a raw payload DP.
+        if "field_index" in sensor_config or "byte_offset" in sensor_config:
+            raw_source = resolve_raw_source(coordinator, sensor_config)
+            if raw_source and coordinator.data and raw_source in coordinator.data:
+                binary_sensors.append(TuyaHeatpumpBinarySensor(
+                    coordinator, sensor_code, {**sensor_config, "raw_source": raw_source}))
+            else:
+                pending.append((sensor_code, sensor_config))
+            continue
         lookup_code = sensor_config.get("code", sensor_code)
         if (
             (coordinator.data and lookup_code in coordinator.data)
@@ -49,6 +60,10 @@ async def async_setup_entry(
             _LOGGER.warning("Binary sensor %s not found in device data, skipping", sensor_code)
     
     async_add_entities(binary_sensors)
+    watch_pending_raw_entities(
+        config_entry, coordinator, async_add_entities,
+        pending, TuyaHeatpumpBinarySensor, _LOGGER,
+    )
 
 
 class TuyaHeatpumpOnlineSensor(BinarySensorEntity):
@@ -145,11 +160,23 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        lookup_code = self._lookup_code()
-        if not self.coordinator.data or lookup_code not in self.coordinator.data:
-            return None
-            
-        raw_value = self.coordinator.data[lookup_code]['value']
+        if "field_index" in self._config or "byte_offset" in self._config:
+            raw_source = resolve_raw_source(self.coordinator, self._config)
+            if raw_source is None or not self.coordinator.data or raw_source not in self.coordinator.data:
+                return None
+            raw_value = decode_raw_field(
+                self.coordinator.data[raw_source].get('value'),
+                self._config.get('field_index', 0),
+                self._config.get('encoding', 'int32_be'),
+                byte_offset=self._config.get('byte_offset'),
+            )
+            if raw_value is None:
+                return None
+        else:
+            lookup_code = self._lookup_code()
+            if not self.coordinator.data or lookup_code not in self.coordinator.data:
+                return None
+            raw_value = self.coordinator.data[lookup_code]['value']
 
         conversion = Conversion(self._config.get('conversion', 'bool(value)'))
         try:
@@ -173,8 +200,7 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
         """Tuya DP ID ve Code bilgilerini attributes'a ekle."""
         attrs: dict[str, Any] = {}
         
-        lookup_code = self._lookup_code()
-        attrs["tuya_code"] = lookup_code
+        attrs["tuya_code"] = self._config.get("raw_source") or self._lookup_code()
         attrs["tuya_dp_id"] = self._config.get("dp_id")
 
         if self.coordinator.model_id:
@@ -191,6 +217,9 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
             self.coordinator.data is not None
         ):
             return False
+        if "field_index" in self._config or "byte_offset" in self._config:
+            raw_source = resolve_raw_source(self.coordinator, self._config)
+            return raw_source is not None and raw_source in self.coordinator.data
         if self._lookup_code() in self.coordinator.data:
             return True
         # DP the schema knows but the poll data currently lacks → keep

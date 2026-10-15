@@ -49,6 +49,7 @@ from .const import (
 import tinytuya
 from .model_loader import load_model_mapping, async_load_model_mapping
 from .raw_codec import encode_raw_field
+from .conversion import Conversion
 from .discovery import (
     ENTITY_CATEGORIES,
     build_discovered_mapping,
@@ -163,6 +164,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         self._sensor_offsets: dict[str, float] = {}
         self._listener_task = None
         self._heartbeat_task = None
+        self._fallback_poll_task = None
+        self._start_listener_task = None
         # Debounce için (local)
         self._pending_commands = {}  # code → (value, task)
         self._debounce_delay = 1.0   # 1 saniye
@@ -247,6 +250,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             # sorunu, Python'dan zorla iptal edilemez) ama YENİ çağrıların
             # o thread'in peşine takılıp aynı kaderi paylaşmasını engeller.
             self._local_socket_lock = threading.Lock()
+            # A pending write makes receive()/heartbeat() step aside. Without
+            # this, on a slow/lossy device the two background loops starve
+            # set_value() of the shared lock and the write is dropped.
+            self._write_pending = threading.Event()
             try:
                 try:
                     self.local_device = tinytuya.Device(
@@ -288,9 +295,18 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     self.local_device.set_socketTimeout(1)
                 except Exception:
                     pass  # bu tinytuya sürümünde yoksa sessizce geç
+                # tinytuya waits 5 s between reconnect attempts by default;
+                # 1 s recovers faster after a short network drop (the
+                # heartbeat below is what notices the drop).
+                try:
+                    self.local_device.set_socketRetryDelay(1)
+                except Exception:
+                    pass  # bu tinytuya sürümünde yoksa sessizce geç
                 _LOGGER.info("Local Tuya device initialized (Persistent Mode + NoDelay): %s", self.device_id)
                
-                self.hass.loop.create_task(self._async_start_listener())
+                self._start_listener_task = self.hass.loop.create_task(
+                    self._async_start_listener()
+                )
                
             except Exception as err:
                 _LOGGER.error("Failed to initialize TinyTuya device: %s", err)
@@ -495,6 +511,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
     # ============================================================================
 
     _LOCK_ACQUIRE_TIMEOUT = 4
+    # Local mode has no periodic HA poll (_listen_loop only sees DPs the
+    # device pushes). A DP the device changes on its own without pushing
+    # would stay stale indefinitely; _fallback_poll_loop refreshes on
+    # this interval regardless of push behaviour.
+    _FALLBACK_POLL_INTERVAL = 60
 
     def _local_status(self):
         """Locked wrapper around local_device.status()."""
@@ -510,6 +531,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
 
     def _local_receive(self):
         """Locked wrapper around local_device.receive()."""
+        if self._write_pending.is_set():
+            time.sleep(0.3)
+            return None
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (receive)")
         try:
@@ -518,11 +542,21 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             self._local_socket_lock.release()
 
     def _local_heartbeat(self):
-        """Locked wrapper around local_device.heartbeat()."""
+        """Locked wrapper around local_device.heartbeat().
+
+        nowait=False on purpose: with the default (fire-and-forget) a
+        socket that died silently at the TCP level keeps "succeeding"
+        because sendall() only fills the kernel buffer, and the drop goes
+        unnoticed until the OS times it out (minutes to hours). Waiting
+        for the reply makes tinytuya close and reconnect the socket when
+        no answer arrives within the 1 s socket timeout, so a dropped
+        connection recovers within one heartbeat round."""
+        if self._write_pending.is_set():
+            return None
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (heartbeat)")
         try:
-            return self.local_device.heartbeat()
+            return self.local_device.heartbeat(nowait=False)
         finally:
             self._local_socket_lock.release()
 
@@ -540,12 +574,42 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
 
     def _local_set_value(self, dp_id, value):
         """Locked wrapper around local_device.set_value()."""
-        if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
-            raise TimeoutError(f"Local socket lock alınamadı (set_value dp {dp_id})")
+        self._write_pending.set()
         try:
-            return self.local_device.set_value(dp_id, value)
+            # A second write finishing clears the flag early; harmless,
+            # writes are debounced per code. Longer wait than the 4 s of
+            # the background calls because a write must not be dropped.
+            if not self._local_socket_lock.acquire(timeout=10):
+                raise TimeoutError(f"Local socket lock alınamadı (set_value dp {dp_id})")
+            try:
+                return self.local_device.set_value(dp_id, value)
+            finally:
+                self._local_socket_lock.release()
         finally:
-            self._local_socket_lock.release()
+            self._write_pending.clear()
+
+    def cancel_background_tasks(self) -> None:
+        """Cancel the local listener/heartbeat/fallback-poll tasks.
+
+        They are started from __init__ (local mode), before setup has
+        even reached the first refresh. When setup fails, HA retries with
+        a brand-new coordinator while the failed attempt's tasks keep
+        running, each holding its own socket to the device; over a long
+        outage they pile up. Call on any setup failure and on unload."""
+        for task in (
+            self._start_listener_task,
+            self._listener_task,
+            self._heartbeat_task,
+            self._fallback_poll_task,
+        ):
+            if task is not None and not task.done():
+                task.cancel()
+        # Debounced writes still waiting must not fire on a coordinator
+        # that has been unloaded or replaced.
+        for _value, task in list(self._pending_commands.values()):
+            if not task.done():
+                task.cancel()
+        self._pending_commands.clear()
 
     async def _async_start_listener(self):
         """Start the background listener for instant updates.
@@ -563,6 +627,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         _LOGGER.info("Starting TinyTuya listener loop for %s", self.device_id)
         self._listener_task = self.hass.loop.create_task(self._listen_loop())
         self._heartbeat_task = self.hass.loop.create_task(self._heartbeat_loop())
+        self._fallback_poll_task = self.hass.loop.create_task(self._fallback_poll_loop())
 
     async def _listen_loop(self):
         """Loop to receive instant data from the device.
@@ -583,19 +648,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await asyncio.sleep(0.05)
                 data = await self.hass.async_add_executor_job(self._local_receive)
-                if data and 'dps' in data:
-                    _LOGGER.debug("Instant update received: %s", data['dps'])
-                    new_data = self._process_local_dps(data['dps'])
-                    if new_data:
-                        self._apply_sent_cache(new_data)
-                        # Bu push muhtemelen sadece DEĞİŞEN DP'leri içeriyor
-                        # (tam bir status() snapshot'ı değil). self.data'nın
-                        # üzerine tamamen yazmak (replace) yerine mevcut
-                        # verinin üstüne merge ediyoruz — yoksa henüz bu
-                        # push'ta yer almayan tüm diğer sensör/switch/text
-                        # değerleri anında kaybolurdu.
-                        merged = {**(self.data or {}), **new_data}
-                        self.async_set_updated_data(merged)
+                self._merge_pushed_frame(data)
                 consecutive_errors = 0
                 await asyncio.sleep(0.1)
             except Exception as err:
@@ -608,6 +661,28 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 await asyncio.sleep(backoff)
 
+    def _merge_pushed_frame(self, data) -> None:
+        """Merge a frame read from the shared socket (a receive() push or
+        a heartbeat reply that happened to carry a status push) into
+        self.data."""
+        if not (isinstance(data, dict) and 'dps' in data):
+            return
+        _LOGGER.debug("Instant update received: %s", data['dps'])
+        # A frame from the device proves it is online (a failed fallback
+        # poll may have flagged it offline).
+        self.is_online = True
+        new_data = self._process_local_dps(data['dps'])
+        if new_data:
+            self._apply_sent_cache(new_data)
+            # Bu push muhtemelen sadece DEĞİŞEN DP'leri içeriyor
+            # (tam bir status() snapshot'ı değil). self.data'nın
+            # üzerine tamamen yazmak (replace) yerine mevcut
+            # verinin üstüne merge ediyoruz — yoksa henüz bu
+            # push'ta yer almayan tüm diğer sensör/switch/text
+            # değerleri anında kaybolurdu.
+            merged = {**(self.data or {}), **new_data}
+            self.async_set_updated_data(merged)
+
     async def _heartbeat_loop(self):
         """Loop to keep the connection alive. _listen_loop ile aynı
         gerekçeyle: local modda bağımsız bir periyodik poll yok, bu
@@ -617,13 +692,43 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         while True:
             try:
                 if self.local_device:
-                    await self.hass.async_add_executor_job(self._local_heartbeat)
+                    reply = await self.hass.async_add_executor_job(self._local_heartbeat)
+                    # nowait=False reads one frame; if a status push won
+                    # the race it arrives here instead of in _listen_loop.
+                    self._merge_pushed_frame(reply)
                 await asyncio.sleep(5)
             except Exception as err:
                 _LOGGER.debug(
                     "Heartbeat loop hit an error (%s) — retrying in 5s.", err,
                 )
                 await asyncio.sleep(5)
+
+    async def _fallback_poll_loop(self):
+        """Periodic safety-net refresh for local mode (see
+        _FALLBACK_POLL_INTERVAL). Reuses the normal status() path of
+        _async_update_data, so it adds no new device-query logic."""
+        while True:
+            try:
+                await asyncio.sleep(self._FALLBACK_POLL_INTERVAL)
+                # Not async_request_refresh(): a single transient failure
+                # (lock timeout, empty frame) would mark every entity
+                # unavailable until the next push. Keep the last data and
+                # try again next cycle instead.
+                try:
+                    data = await self._async_update_data()
+                except UpdateFailed as err:
+                    _LOGGER.debug("Fallback poll failed (%s); keeping last data.", err)
+                    continue
+                if data:
+                    # Merge onto current data: a push may have landed
+                    # while this poll was awaiting the device.
+                    self.async_set_updated_data({**(self.data or {}), **data})
+            except asyncio.CancelledError:
+                raise
+            except Exception as err:
+                _LOGGER.debug(
+                    "Fallback poll loop hit an error (%s) — will retry next cycle.", err,
+                )
 
     # ============================================================================
     # MQTT (tuya_sharing) — opsiyonel, bkz. sharing_mqtt.py
@@ -1056,7 +1161,43 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
     # KOMUT GÖNDERME
     # ============================================================================
 
-    async def send_command(self, code: str, value: Any, _retry: bool = True) -> bool:
+    def _find_conversion_expr(self, code: str) -> str | None:
+        """This code's read-side `conversion` expression from the model
+        mapping, or None (raw-field entries, unknown codes, no conversion)."""
+        if not self.model_mapping:
+            return None
+        for entity_type in ('sensors', 'binary_sensors', 'switches', 'numbers', 'selects', 'texts'):
+            for key, cfg in (self.model_mapping.get(entity_type) or {}).items():
+                if 'field_index' in cfg:
+                    continue
+                if cfg.get('code', key) == code:
+                    return cfg.get('conversion')
+        return None
+
+    def _resolve_cache_value(self, code: str, value: Any, display_value: Any) -> Any:
+        """What to cache (and show optimistically) after a write so the
+        next read, which re-applies this DP's read-side `conversion`,
+        reproduces the right value.
+
+        Most DPs have no read scale: display_value is right. DPs scaled on
+        both read and write (conversion "value / 10" + api_conversion
+        "int(value * 10)") need the wire value instead, or the read
+        conversion applies twice (26 -> 2.6). Decided by checking whether
+        the read conversion maps `value` back to `display_value`."""
+        if value == display_value:
+            return display_value
+        conversion_expr = self._find_conversion_expr(code)
+        if conversion_expr is not None:
+            try:
+                if Conversion(conversion_expr).convert(value) == display_value:
+                    return value
+            except Exception:
+                pass
+        return display_value
+
+    async def send_command(
+        self, code: str, value: Any, _retry: bool = True, display_value: Any = None,
+    ) -> bool:
         """Send command to device - local için debounce ile en son değeri gönder.
 
         _retry: dahili kullanım için. Cloud modda "token invalid" hatası
@@ -1065,7 +1206,17 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         ihtimaline karşı savunma amaçlı), access_token'ı temizleyip TEK
         seferliğine tekrar dener — poll'daki (_async_update_data) aynı
         self-healing davranışın komut gönderme tarafındaki karşılığı.
+
+        display_value: the entity's own native value before api_conversion
+        (defaults to `value`). `value` is what goes on the wire. They
+        differ on DPs scaled asymmetrically (e.g. written as value / 10,
+        read unscaled); the optimistic update and _sent_value_cache must
+        hold whatever the next read will reproduce (see
+        _resolve_cache_value), or the entity briefly shows the wire value
+        and _apply_sent_cache rejects the correct echo as stale.
         """
+        if display_value is None:
+            display_value = value
         # HA'nın NumberEntity.async_set_native_value'su HER ZAMAN float
         # gönderir (örn. 39.0), ama Tuya'da "float" diye bir DP tipi yok —
         # sayısal DP'lerin hepsi Integer (gerekirse scale ile). Tam sayı
@@ -1075,7 +1226,17 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # #80 — temp_set1 yazımı 8sn sonra eski değere dönüyordu). Burada
         # tek noktadan normalize ediyoruz ki her code/model için ayrı ayrı
         # "int(value)" yazmaya gerek kalmasın.
-        if isinstance(value, float) and value.is_integer():
+        #
+        # Exception: a write-side DOWN-scale (e.g. api_conversion
+        # "value / 10", upstream issue #53) — there a whole wire value
+        # like 4.0 (from 40) is kept as-is, because some devices read the
+        # bare integer differently. Up-scaled ("value * 10") and unscaled
+        # writes are still normalized to int (issue #80).
+        downscaled = (
+            isinstance(display_value, (int, float))
+            and abs(value) < abs(display_value)
+        ) if isinstance(value, float) else False
+        if isinstance(value, float) and value.is_integer() and not downscaled:
             value = int(value)
         try:
             if self.connection_type == "cloud":
@@ -1121,7 +1282,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # cache'e yazıyoruz ki _apply_sent_cache (aşağıdaki
                     # poll'da çağrılıyor) Tuya cloud'un henüz yetişmediği
                     # bir "eski değer" döndürmesi durumunda bunu düzeltebilsin.
-                    self._sent_value_cache[code] = (value, time.time())
+                    cache_value = self._resolve_cache_value(code, value, display_value)
+                    self._sent_value_cache[code] = (cache_value, time.time())
                     # Optimistic update: local moddaki ile aynı sebep —
                     # cihazdan/Tuya cloud'undan gerçek yankıyı beklemeden
                     # entity'ye YENİ değeri hemen yansıtıyoruz. Bu olmadan
@@ -1132,7 +1294,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # sonra tekrar açıldı" gibi görünen bir titreşime ve
                     # Activity geçmişinde yanlış/eksik bir olay sırasına
                     # yol açıyordu.
-                    self._optimistic_update(code, value)
+                    self._optimistic_update(code, cache_value)
                     await asyncio.sleep(2)
                     await self.async_request_refresh()
                     return True
@@ -1146,7 +1308,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                         )
                         self.access_token = None
                         self._token_expires_at = 0.0
-                        return await self.send_command(code, value, _retry=False)
+                        return await self.send_command(
+                            code, value, _retry=False, display_value=display_value,
+                        )
                     _LOGGER.error("❌ Cloud komut başarısız: %s = %s → %s", code, value, error_msg)
                     return False
                   
@@ -1167,7 +1331,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
                
                 # Son gönderilen değeri cache'e yaz
-                self._sent_value_cache[code] = (value, time.time())
+                cache_value = self._resolve_cache_value(code, value, display_value)
+                self._sent_value_cache[code] = (cache_value, time.time())
 
                 # Optimistic update: cihazdan echo/status beklemeden
                 # entity'lere YENİ değeri hemen göster. Bunu yapmazsak
@@ -1178,7 +1343,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # titreşim görür. self.data burada hemen güncellenince bu
                 # titreşim tamamen ortadan kalkıyor; _apply_sent_cache zaten
                 # cihazdan gerçekten farklı bir echo gelirse bunu koruyor.
-                self._optimistic_update(code, value)
+                self._optimistic_update(code, cache_value)
 
                 # Yeni debounce task oluştur
                 async def delayed_send():
