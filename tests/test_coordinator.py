@@ -304,7 +304,7 @@ def test_flush_cancelled_at_deadline():
     async def run():
         c, sent = _local_coord({})
         c.hass.loop = asyncio.get_running_loop()
-        c._FLUSH_PREV_WAIT = -11.9   # deadline = 0.1 s
+        c._FLUSH_PREV_WAIT = 0.05; c._SET_VALUE_LOCK_WAIT = -1.95   # deadline = 0.1 s
         import threading
         c._local_socket_lock = threading.Lock(); c._LOCK_ACQUIRE_TIMEOUT = 1
         c._start_listener_task = c._listener_task = c._heartbeat_task = c._fallback_poll_task = None
@@ -338,5 +338,9 @@ def test_reload_failure_restores_applied_config():
         hass.config_entries.async_reload = boom
         with pytest.raises(RuntimeError):
             await async_update_options(hass, _entry({"ip": "5.6.7.8"}, {}))
+        assert coord.applied_config == config_fingerprint(start)
+        async def failed(eid): return False
+        hass.config_entries.async_reload = failed
+        await async_update_options(hass, _entry({"ip": "5.6.7.8"}, {}))
         assert coord.applied_config == config_fingerprint(start)
     asyncio.run(run())

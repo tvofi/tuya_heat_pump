@@ -145,11 +145,13 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     previous = coordinator.applied_config
     coordinator.applied_config = fingerprint
     try:
-        await hass.config_entries.async_reload(entry.entry_id)
+        reloaded = await hass.config_entries.async_reload(entry.entry_id)
     except Exception:
         # Not applied: let the next save retry.
         coordinator.applied_config = previous
         raise
+    if reloaded is False:  # unload failed without raising
+        coordinator.applied_config = previous
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""

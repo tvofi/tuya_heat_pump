@@ -601,7 +601,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             # A second write finishing clears the flag early; harmless,
             # writes are debounced per code. Longer wait than the 4 s of
             # the background calls because a write must not be dropped.
-            if not self._local_socket_lock.acquire(timeout=10):
+            if not self._local_socket_lock.acquire(timeout=self._SET_VALUE_LOCK_WAIT):
                 raise TimeoutError(f"Local socket lock alınamadı (set_value dp {dp_id})")
             try:
                 self._raise_if_closed()
@@ -684,7 +684,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 futures = [asyncio.ensure_future(f) for f in flushes]
                 _done, pending = await asyncio.wait(
                     futures + in_flight,
-                    timeout=self._FLUSH_PREV_WAIT + 12,
+                    timeout=self._FLUSH_PREV_WAIT + self._SET_VALUE_LOCK_WAIT + 2,
                 )
                 # Flushes still running past the deadline would only hit
                 # the closed socket; cancel them instead of orphaning them.
@@ -700,6 +700,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             self.local_device = None
 
     _FLUSH_PREV_WAIT = 2
+    # How long _local_set_value waits for the socket lock.
+    _SET_VALUE_LOCK_WAIT = 10
 
     async def _async_wait_previous_send(self, code: str, timeout: float = 12) -> None:
         """Wait (by default bounded by set_value's own lock timeout) for a
