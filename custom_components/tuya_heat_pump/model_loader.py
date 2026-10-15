@@ -9,10 +9,14 @@ _LOGGER = logging.getLogger(__name__)
 
 # Cache for loaded models
 _MODEL_CACHE = {}
+# model_id -> name of the module that actually backs it (an unknown
+# model_id falls back to models.default).
+_MODEL_SOURCE: dict[str, str] = {}
 
 
 def clear_model_cache(model_id: str | None = None) -> None:
     """Drop cached model mapping(s) so the next load re-reads the file.
+    None means the default model; "*" clears everything.
 
     _MODEL_CACHE alone is not enough: sys.modules still holds the imported
     model module, and importlib.import_module() would return it as-is.
@@ -20,11 +24,19 @@ def clear_model_cache(model_id: str | None = None) -> None:
     """
     prefix = f"{__package__}.models."
     if model_id is None:
+        model_id = "default"
+    if model_id == "*":
         _MODEL_CACHE.clear()
         for name in [n for n in sys.modules if n.startswith(prefix)]:
             del sys.modules[name]
         return
-    _MODEL_CACHE.pop(model_id, None)
+    source = _MODEL_SOURCE.get(model_id, f"{prefix}{model_id}")
+    # Every cached id backed by the same module (e.g. several unknown ids
+    # all falling back to models.default) goes stale together.
+    for key in [k for k, v in _MODEL_SOURCE.items() if v == source] + [model_id]:
+        _MODEL_CACHE.pop(key, None)
+        _MODEL_SOURCE.pop(key, None)
+    sys.modules.pop(source, None)
     sys.modules.pop(f"{prefix}{model_id}", None)
 
 
@@ -50,6 +62,8 @@ async def async_load_model_mapping(hass: HomeAssistant, model_id: str = None) ->
                 return importlib.import_module(".models.default", __package__)
         
         model_module = await hass.async_add_executor_job(_import_model)
+        if model_module is not None:
+            _MODEL_SOURCE[model_id] = model_module.__name__
         
         if model_module:
             # Create mapping dictionary
@@ -106,7 +120,10 @@ def load_model_mapping(model_id: str = None) -> Dict[str, Any]:
         # Try to load default module directly
         if model_id == "default":
             try:
-                from .models import default as _default_module
+                # importlib (not `from .models import default`): the
+                # latter is satisfied by the stale package attribute even
+                # after clear_model_cache() dropped it from sys.modules.
+                _default_module = importlib.import_module(".models.default", __package__)
                 
                 mapping = {
                     "sensors": getattr(_default_module, "SENSOR_TYPES", {}),

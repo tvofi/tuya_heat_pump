@@ -1,6 +1,7 @@
 """DataUpdateCoordinator for Tuya Heatpump."""
 from __future__ import annotations
 import logging
+import re
 import time
 import hmac
 import hashlib
@@ -166,6 +167,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         self._heartbeat_task = None
         self._fallback_poll_task = None
         self._start_listener_task = None
+        # Shutdown state (see async_close_local).
+        self._closing = False
+        self._local_closed = False
+        # code -> the debounce task currently handing its value to the device
+        self._sending_codes: dict[str, asyncio.Task] = {}
         # Debounce için (local)
         self._pending_commands = {}  # code → (value, task)
         self._debounce_delay = 1.0   # 1 saniye
@@ -525,6 +531,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 "receive()/status() çağrısı meşgul tutuyor)"
             )
         try:
+            self._raise_if_closed()
             return self.local_device.status()
         finally:
             self._local_socket_lock.release()
@@ -537,6 +544,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (receive)")
         try:
+            self._raise_if_closed()
             return self.local_device.receive()
         finally:
             self._local_socket_lock.release()
@@ -556,6 +564,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (heartbeat)")
         try:
+            self._raise_if_closed()
             return self.local_device.heartbeat(nowait=False)
         finally:
             self._local_socket_lock.release()
@@ -568,6 +577,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT):
             raise TimeoutError("Local socket lock alınamadı (updatedps)")
         try:
+            self._raise_if_closed()
             return self.local_device.updatedps(dp_ids)
         finally:
             self._local_socket_lock.release()
@@ -582,11 +592,31 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             if not self._local_socket_lock.acquire(timeout=10):
                 raise TimeoutError(f"Local socket lock alınamadı (set_value dp {dp_id})")
             try:
+                self._raise_if_closed()
                 return self.local_device.set_value(dp_id, value)
             finally:
                 self._local_socket_lock.release()
         finally:
             self._write_pending.clear()
+
+    def _raise_if_closed(self) -> None:
+        """Called inside every locked wrapper: once the socket is closed, a
+        late executor job must not reconnect it (tinytuya reconnects a
+        persistent device on use)."""
+        if self._local_closed:
+            raise ConnectionError("Local connection closed")
+
+    def _local_close(self) -> None:
+        """Close the persistent socket under the socket lock, so no
+        receive()/set_value() is inside tinytuya while it closes."""
+        acquired = self._local_socket_lock.acquire(timeout=self._LOCK_ACQUIRE_TIMEOUT)
+        try:
+            self._local_closed = True
+            if self.local_device is not None:
+                self.local_device.close()
+        finally:
+            if acquired:
+                self._local_socket_lock.release()
 
     def cancel_background_tasks(self) -> None:
         """Cancel the local listener/heartbeat/fallback-poll tasks.
@@ -605,11 +635,56 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             if task is not None and not task.done():
                 task.cancel()
         # Debounced writes still waiting must not fire on a coordinator
-        # that has been unloaded or replaced.
+        # that has been unloaded or replaced (async_close_local flushes
+        # them first on a normal unload).
         for _value, task in list(self._pending_commands.values()):
             if not task.done():
                 task.cancel()
         self._pending_commands.clear()
+
+    async def async_close_local(self) -> None:
+        """Shut down the local connection: send debounced writes still
+        waiting (so a change made just before a reload is not lost), stop
+        the background tasks and close the persistent socket. Safe in
+        cloud mode and when called more than once."""
+        # New writes are refused from here on (send_command returns False).
+        self._closing = True
+        if self.connection_type != "cloud" and getattr(self, "local_device", None):
+            in_flight = []
+            flushes = []
+            for code, (value, task) in list(self._pending_commands.items()):
+                if task.done():
+                    continue
+                if self._sending_codes.get(code) is task:
+                    # Already handed to the device: wait for it, don't resend.
+                    in_flight.append(task)
+                    continue
+                task.cancel()
+                dp_id = next((d for d, c in self.dp_mapping.items() if c == code), None)
+                if dp_id is None:
+                    _LOGGER.warning("Pending write %s = %s dropped on shutdown: unknown DP", code, value)
+                    continue
+                flushes.append(self._async_flush_write(code, dp_id, value))
+            if flushes or in_flight:
+                # One overall deadline, longer than set_value's 10 s lock wait.
+                await asyncio.wait(
+                    [asyncio.ensure_future(f) for f in flushes] + in_flight,
+                    timeout=12,
+                )
+        self.cancel_background_tasks()
+        if getattr(self, "local_device", None) is not None:
+            try:
+                await self.hass.async_add_executor_job(self._local_close)
+            except Exception:  # best effort; GC closes it otherwise
+                pass
+            self.local_device = None
+
+    async def _async_flush_write(self, code: str, dp_id: int, value: Any) -> None:
+        try:
+            await self.hass.async_add_executor_job(self._local_set_value, dp_id, value)
+            _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
+        except Exception as err:
+            _LOGGER.warning("Pending write %s = %s lost on shutdown: %s", code, value, err)
 
     async def _async_start_listener(self):
         """Start the background listener for instant updates.
@@ -1152,7 +1227,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             self._build_dp_mapping()
             _LOGGER.info("Cached model %s kept (schema fetch will be retried next start)", self.model_id)
             return {}
-        self.model_mapping = load_model_mapping("default")
+        self.model_mapping = await async_load_model_mapping(self.hass, "default")
         self._build_dp_mapping()
         _LOGGER.info("Default model mapping yüklendi - %d DP tanımlı", len(self.dp_mapping))
         return {}
@@ -1161,18 +1236,33 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
     # KOMUT GÖNDERME
     # ============================================================================
 
-    def _find_conversion_expr(self, code: str) -> str | None:
-        """This code's read-side `conversion` expression from the model
-        mapping, or None (raw-field entries, unknown codes, no conversion)."""
+    def _find_conversion_expr(self, code: str, field: str = 'conversion') -> str | None:
+        """This code's `conversion` (read side) or `api_conversion` (write
+        side) expression from the model mapping, or None (raw-field
+        entries, unknown codes, no such expression)."""
         if not self.model_mapping:
             return None
         for entity_type in ('sensors', 'binary_sensors', 'switches', 'numbers', 'selects', 'texts'):
             for key, cfg in (self.model_mapping.get(entity_type) or {}).items():
                 if 'field_index' in cfg:
                     continue
-                if cfg.get('code', key) == code:
-                    return cfg.get('conversion')
+                if cfg.get('code', key) != code:
+                    continue
+                # A read-only sensor may share the code of the writable
+                # number; for api_conversion, look past entries without it.
+                if field in cfg:
+                    return cfg[field]
         return None
+
+    _DOWNSCALE_RE = re.compile(r"^\s*value\s*/\s*[\d.]+\s*$")
+
+    def _is_write_downscale(self, code: str) -> bool:
+        """True when this DP's api_conversion is a plain division
+        ("value / 10"). Decided from the model file, not from the size of
+        the result, so a unit conversion like °C→°F is never mistaken for
+        one."""
+        expr = self._find_conversion_expr(code, 'api_conversion')
+        return bool(expr and self._DOWNSCALE_RE.match(expr))
 
     def _resolve_cache_value(self, code: str, value: Any, display_value: Any) -> Any:
         """What to cache (and show optimistically) after a write so the
@@ -1215,6 +1305,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         _resolve_cache_value), or the entity briefly shows the wire value
         and _apply_sent_cache rejects the correct echo as stale.
         """
+        if self._closing:
+            _LOGGER.warning("Write %s = %s refused: connection is shutting down", code, value)
+            return False
         if display_value is None:
             display_value = value
         # HA'nın NumberEntity.async_set_native_value'su HER ZAMAN float
@@ -1232,11 +1325,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # like 4.0 (from 40) is kept as-is, because some devices read the
         # bare integer differently. Up-scaled ("value * 10") and unscaled
         # writes are still normalized to int (issue #80).
-        downscaled = (
-            isinstance(display_value, (int, float))
-            and abs(value) < abs(display_value)
-        ) if isinstance(value, float) else False
-        if isinstance(value, float) and value.is_integer() and not downscaled:
+        if (
+            isinstance(value, float)
+            and value.is_integer()
+            and not (value != display_value and self._is_write_downscale(code))
+        ):
             value = int(value)
         try:
             if self.connection_type == "cloud":
@@ -1325,10 +1418,13 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     return False
                
                 # Mevcut bekleyen task varsa iptal et
+                # (a write already being sent is left to finish: cancelling
+                # it cannot stop its executor thread)
                 if code in self._pending_commands:
                     task = self._pending_commands[code][1]
-                    task.cancel()
-                    _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
+                    if self._sending_codes.get(code) is not task:
+                        task.cancel()
+                        _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
                
                 # Son gönderilen değeri cache'e yaz
                 cache_value = self._resolve_cache_value(code, value, display_value)
@@ -1348,6 +1444,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # Yeni debounce task oluştur
                 async def delayed_send():
                     await asyncio.sleep(self._debounce_delay)
+                    self._sending_codes[code] = asyncio.current_task()
                     try:
                         result = await self.hass.async_add_executor_job(
                             self._local_set_value, dp_id, value
@@ -1359,7 +1456,13 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     except Exception as err:
                         _LOGGER.error("Debounce gönderme hatası %s = %s: %s", code, value, err)
                     finally:
-                        if code in self._pending_commands:
+                        # Only clear our own entry: a newer write for the
+                        # same code may already have replaced it.
+                        me = asyncio.current_task()
+                        if self._sending_codes.get(code) is me:
+                            del self._sending_codes[code]
+                        entry = self._pending_commands.get(code)
+                        if entry is not None and entry[1] is me:
                             del self._pending_commands[code]
                
                 task = self.hass.loop.create_task(delayed_send())

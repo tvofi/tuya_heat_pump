@@ -490,7 +490,7 @@ async def validate_input(hass: HomeAssistant, data: dict, connection_type: str) 
 
         return {"title": title, "model_mapping": coordinator.model_mapping or {}}
     finally:
-        coordinator.cancel_background_tasks()
+        await coordinator.async_close_local()
 
 
 class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
