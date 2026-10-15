@@ -159,6 +159,9 @@ class SharingMQTT:
         self._hass = hass
         self._coordinator = coordinator
         self._manager = None
+        # Set by async_stop; async_start checks it after each executor step
+        # (cancelling the start task cannot stop a running executor job).
+        self._stopped = False
         self._sufficient = False
         self._connected = False
         self._reconnect_attempted = False
@@ -232,9 +235,13 @@ class SharingMQTT:
                 )
 
             self._manager = await self._hass.async_add_executor_job(_build_manager)
+            if await self._abort_if_stopped():
+                return False
             self._manager.add_device_listener(listener)
 
             await self._hass.async_add_executor_job(self._manager.update_device_cache)
+            if await self._abort_if_stopped():
+                return False
 
             device = self._manager.device_map.get(self._coordinator.device_id)
             if device is None:
@@ -257,6 +264,8 @@ class SharingMQTT:
 
             await self._hass.async_add_executor_job(self._manager.refresh_mq)
             await asyncio.sleep(3)
+            if await self._abort_if_stopped():
+                return False
 
             # Yeterlilik kontrolünü BURAYA (refresh_mq + bekleme sonrasına)
             # taşıdık — canlı testte gördük ki update_device_cache()'in
@@ -327,7 +336,16 @@ class SharingMQTT:
                 except Exception as err:
                     _LOGGER.warning("MQTT: yeniden bağlanma denemesi başarısız (%s).", err)
 
+    async def _abort_if_stopped(self) -> bool:
+        """After an executor step of async_start: if async_stop ran in the
+        meantime, stop whatever the step brought up and give up."""
+        if not self._stopped:
+            return False
+        await self.async_stop()
+        return True
+
     async def async_stop(self) -> None:
+        self._stopped = True
         if self._health_check_task:
             self._health_check_task.cancel()
         mq = getattr(self._manager, "mq", None) if self._manager else None
@@ -421,11 +439,9 @@ class _PersistTokenListener:
                 list(token_info.keys()), list(existing.keys()), list(merged.keys()),
             )
             new_data = {**entry.data, CONF_SHARING_TOKEN_INFO: merged}
-            # Bu sadece token persist'i — kullanıcı ayarı değişmedi,
-            # entegrasyonun reload olmasına gerek yok. __init__.py'deki
-            # add_update_listener'ın bunu tetiklememesi için bayrağı
-            # önceden set ediyoruz (bkz. coordinator.skip_next_reload).
-            coordinator.skip_next_reload = True
+            # Bu sadece token persist'i — kullanıcı ayarı değişmedi. The
+            # token is a cache-only key (config_fingerprint.py), so the
+            # update listener does not reload for it.
             hass.config_entries.async_update_entry(entry, data=new_data)
 
         class _Impl(SharingTokenListener):

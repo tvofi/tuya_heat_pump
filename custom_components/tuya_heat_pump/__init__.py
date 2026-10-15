@@ -9,6 +9,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from .const import DOMAIN, PLATFORMS
 from .coordinator import TuyaScaleDataUpdateCoordinator
 from .model_loader import clear_model_cache
+from .config_fingerprint import config_fingerprint
 from .services import async_setup_services, async_unload_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,6 +85,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # kesin dolu olduğu (get_device_model + first_refresh tamamlandığı)
     # bu noktadan SONRA, arka planda (bloklamadan) başlatılıyor.
     mqtt_start = hass.loop.create_task(coordinator._async_start_mqtt())
+    # Retrieve any exception so asyncio does not log it as never retrieved.
+    mqtt_start.add_done_callback(lambda t: t.cancelled() or t.exception())
 
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -94,13 +97,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await asyncio.wait({mqtt_start}, timeout=30)
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
+        # Platforms that did load stay registered otherwise (HA does not
+        # call unload for a failed setup); unloading one that never loaded
+        # raises, so go one by one.
+        for platform in PLATFORMS:
+            try:
+                await hass.config_entries.async_forward_entry_unload(entry, platform)
+            except Exception:
+                pass
         await coordinator.async_close_local()
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        clear_model_cache(coordinator.model_id)
         if not hass.data[DOMAIN]:
             async_unload_services(hass)
         raise
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
+    # A settings change saved during setup, before the listener existed,
+    # would otherwise only apply on the next restart.
+    if config_fingerprint(entry) != coordinator.applied_config:
+        hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
 
     return True
 
@@ -111,16 +127,13 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     tetikleniyor (HA'nın add_update_listener davranışı ikisini de
     kapsıyor). sharing_mqtt.py token'ı persist ederken (~2 saatte bir,
     otomatik yenileme) entry.data'yı güncelliyor — bu bir kullanıcı
-    ayar değişikliği DEĞİL, o yüzden reload gerektirmiyor. Coordinator
-    bu durumda skip_next_reload'u önceden True yapıyor.
+    ayar değişikliği DEĞİL, o yüzden reload gerektirmiyor: the listener
+    compares the entry against coordinator.applied_config, which leaves
+    the cache-only keys out (config_fingerprint.py).
     """
     coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    if coordinator is not None and coordinator.skip_next_reload:
-        coordinator.skip_next_reload = False
-        _LOGGER.debug(
-            "entry.data güncellendi ama skip_next_reload aktifti "
-            "(token-only yazım) — reload atlanıyor."
-        )
+    if coordinator is not None and config_fingerprint(entry) == coordinator.applied_config:
+        _LOGGER.debug("Only cache keys changed in the config entry — no reload.")
         return
     await hass.config_entries.async_reload(entry.entry_id)
 

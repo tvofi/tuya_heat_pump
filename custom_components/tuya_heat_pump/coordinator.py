@@ -51,6 +51,7 @@ import tinytuya
 from .model_loader import load_model_mapping, async_load_model_mapping
 from .raw_codec import encode_raw_field
 from .conversion import Conversion
+from .config_fingerprint import config_fingerprint
 from .discovery import (
     ENTITY_CATEGORIES,
     build_discovered_mapping,
@@ -82,8 +83,15 @@ def make_api_request(url: str, headers: dict, method: str = "GET", data: dict = 
 class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Tuya Heatpump data with Instant Updates."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
-        """Initialize the coordinator."""
+    def __init__(
+        self, hass: HomeAssistant, config_entry: ConfigEntry, *, start_local: bool = True,
+    ) -> None:
+        """Initialize the coordinator.
+
+        start_local=False (config-flow validation) skips opening the
+        persistent local socket and its background tasks: validation only
+        needs the cloud model lookup, and a second LAN session competes
+        with the one the flow itself opens on single-session devices."""
         self.connection_type = config_entry.data.get(CONF_CONNECTION_TYPE, "cloud")
        
         if self.connection_type == "cloud":
@@ -133,14 +141,14 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # duraklatılan periyodik poll'un eski değerini saklamak için.
         self.sharing_mqtt = None
         self._pre_mqtt_update_interval = None
-        # entry.data'ya sadece token/cache yazmak için async_update_entry
-        # çağrıldığında (örn. sharing_mqtt.py'nin token yenilemesi ~2
-        # saatte bir), __init__.py'deki add_update_listener bunu gerçek
-        # bir kullanıcı ayar değişikliği sanıp async_reload tetikliyordu
-        # — bu da MQTT'nin (ve tüm entegrasyonun) gereksiz yere anlık
-        # kopup yeniden kurulmasına sebep oluyordu. Bu bayrak True iken
-        # __init__.py'deki listener reload'u bir kereliğine atlar.
-        self.skip_next_reload = False
+        # The configuration this coordinator was built from, minus the
+        # cache-only keys (token cache, model cache, MQTT token). The
+        # update listener in __init__.py reloads only when the entry's
+        # fingerprint differs from this — so cache writes (token refresh
+        # every ~2 h, model cache) never reload, and a real settings change
+        # is never swallowed (this replaced a one-shot skip flag that
+        # several writers shared).
+        self.applied_config = config_fingerprint(config_entry)
         # Raw DP → code cache. Filled from live properties in cloud mode
         # (every raw-type DP is registered by dp_id). Also populated from
         # any `raw_source` fields in the model mapping for local mode.
@@ -260,63 +268,65 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             # this, on a slow/lossy device the two background loops starve
             # set_value() of the shared lock and the write is dropped.
             self._write_pending = threading.Event()
-            try:
+            self.local_device = None
+            if start_local:
                 try:
-                    self.local_device = tinytuya.Device(
-                        dev_id=self.device_id,
-                        address=self.ip,
-                        local_key=self.local_key,
-                        version=self.protocol,
-                        persist=True,
-                        # Cihaz kapalı/erişilemezken TCP bağlantı denemesi
-                        # işletim sisteminin varsayılan (genelde 20-60+
-                        # saniye) timeout'unu bekleyebiliyor — bu da HA'nın
-                        # "Waiting for integrations to complete setup" ile
-                        # uzun süre takılmasına yol açıyor. Kısa bir
-                        # bağlantı timeout'u ile cihaz kapalıyken hata
-                        # hızlı gelir, HA'nın kendi retry/backoff mekanizması
-                        # normal hızında işler.
-                        connection_timeout=3,
-                    )
-                except TypeError:
-                    # Bu tinytuya sürümü connection_timeout kwarg'ını
-                    # desteklemiyor — onsuz devam et (eski davranış).
-                    self.local_device = tinytuya.Device(
-                        dev_id=self.device_id,
-                        address=self.ip,
-                        local_key=self.local_key,
-                        version=self.protocol,
-                        persist=True,
-                    )
-                self.local_device.set_socketPersistent(True)
-                self.local_device.set_socketNODELAY(True)
-                # Kısa bir okuma timeout'u: _listen_loop sürekli receive()
-                # çağırıyor ve bunu _local_socket_lock altında yapıyor.
-                # tinytuya'nın varsayılan timeout'u birkaç saniye olabilir —
-                # veri gelmediğinde receive() o süre boyunca kilidi elinde
-                # tutar, bu da status()/set_value() çağrılarını gereksiz
-                # bekletir. Kısa timeout, kilidi sık sık bırakıp diğer
-                # çağrılara fırsat vermesini sağlıyor.
-                try:
-                    self.local_device.set_socketTimeout(1)
-                except Exception:
-                    pass  # bu tinytuya sürümünde yoksa sessizce geç
-                # tinytuya waits 5 s between reconnect attempts by default;
-                # 1 s recovers faster after a short network drop (the
-                # heartbeat below is what notices the drop).
-                try:
-                    self.local_device.set_socketRetryDelay(1)
-                except Exception:
-                    pass  # bu tinytuya sürümünde yoksa sessizce geç
-                _LOGGER.info("Local Tuya device initialized (Persistent Mode + NoDelay): %s", self.device_id)
+                    try:
+                        self.local_device = tinytuya.Device(
+                            dev_id=self.device_id,
+                            address=self.ip,
+                            local_key=self.local_key,
+                            version=self.protocol,
+                            persist=True,
+                            # Cihaz kapalı/erişilemezken TCP bağlantı denemesi
+                            # işletim sisteminin varsayılan (genelde 20-60+
+                            # saniye) timeout'unu bekleyebiliyor — bu da HA'nın
+                            # "Waiting for integrations to complete setup" ile
+                            # uzun süre takılmasına yol açıyor. Kısa bir
+                            # bağlantı timeout'u ile cihaz kapalıyken hata
+                            # hızlı gelir, HA'nın kendi retry/backoff mekanizması
+                            # normal hızında işler.
+                            connection_timeout=3,
+                        )
+                    except TypeError:
+                        # Bu tinytuya sürümü connection_timeout kwarg'ını
+                        # desteklemiyor — onsuz devam et (eski davranış).
+                        self.local_device = tinytuya.Device(
+                            dev_id=self.device_id,
+                            address=self.ip,
+                            local_key=self.local_key,
+                            version=self.protocol,
+                            persist=True,
+                        )
+                    self.local_device.set_socketPersistent(True)
+                    self.local_device.set_socketNODELAY(True)
+                    # Kısa bir okuma timeout'u: _listen_loop sürekli receive()
+                    # çağırıyor ve bunu _local_socket_lock altında yapıyor.
+                    # tinytuya'nın varsayılan timeout'u birkaç saniye olabilir —
+                    # veri gelmediğinde receive() o süre boyunca kilidi elinde
+                    # tutar, bu da status()/set_value() çağrılarını gereksiz
+                    # bekletir. Kısa timeout, kilidi sık sık bırakıp diğer
+                    # çağrılara fırsat vermesini sağlıyor.
+                    try:
+                        self.local_device.set_socketTimeout(1)
+                    except Exception:
+                        pass  # bu tinytuya sürümünde yoksa sessizce geç
+                    # tinytuya waits 5 s between reconnect attempts by default;
+                    # 1 s recovers faster after a short network drop (the
+                    # heartbeat below is what notices the drop).
+                    try:
+                        self.local_device.set_socketRetryDelay(1)
+                    except Exception:
+                        pass  # bu tinytuya sürümünde yoksa sessizce geç
+                    _LOGGER.info("Local Tuya device initialized (Persistent Mode + NoDelay): %s", self.device_id)
                
-                self._start_listener_task = self.hass.loop.create_task(
-                    self._async_start_listener()
-                )
+                    self._start_listener_task = self.hass.loop.create_task(
+                        self._async_start_listener()
+                    )
                
-            except Exception as err:
-                _LOGGER.error("Failed to initialize TinyTuya device: %s", err)
-                self.local_device = None
+                except Exception as err:
+                    _LOGGER.error("Failed to initialize TinyTuya device: %s", err)
+                    self.local_device = None
 
     # ============================================================================
     # YARDIMCI METODLAR
@@ -436,17 +446,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             )
             return
 
-        # Bu bir KULLANICI AYARI değişikliği değil (yalnızca cache) —
-        # __init__.py'deki update listener'ın reload tetiklememesi için
-        # bayrağı önceden set ediyoruz. async_update_entry veri gerçekten
-        # değişmediyse False dönüp listener'ı HİÇ tetiklemiyor; o durumda
-        # bayrağı geri almazsak takılı kalır ve bir sonraki GERÇEK ayar
-        # değişikliği sessizce yutulur.
-        self.skip_next_reload = True
-        if not self.hass.config_entries.async_update_entry(
+        # Cache-only keys: excluded from config_fingerprint, so the update
+        # listener does not reload for this write.
+        self.hass.config_entries.async_update_entry(
             entry, data={**entry.data, **fields}
-        ):
-            self.skip_next_reload = False
+        )
 
     async def _async_request_hidden_dps(self, data: dict) -> None:
         """Local mode: ask the device for every known DP id (model file or
@@ -679,7 +683,15 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 pass
             self.local_device = None
 
+    async def _async_wait_previous_send(self, code: str) -> None:
+        """Wait (bounded by set_value's own lock timeout) for a write of
+        this code that is already being handed to the device."""
+        prev = self._sending_codes.get(code)
+        if prev is not None and prev is not asyncio.current_task() and not prev.done():
+            await asyncio.wait({prev}, timeout=12)
+
     async def _async_flush_write(self, code: str, dp_id: int, value: Any) -> None:
+        await self._async_wait_previous_send(code)
         try:
             await self.hass.async_add_executor_job(self._local_set_value, dp_id, value)
             _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
@@ -1041,9 +1053,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             # Bir sonraki setup retry'ı (veya HA restart'ı) bu token'ı
             # network'e gitmeden reuse edebilsin diye entry.data'ya
             # yazıyoruz (bkz. issue #77, __init__'teki cache okuma).
-            # skip_next_reload: bu sadece token persist'i, kullanıcı
-            # ayarı değişmedi — entegrasyonun reload olmasına gerek yok
-            # (bkz. sharing_mqtt.py'deki aynı desen).
+            # Cache-only keys: the update listener does not reload for
+            # them (config_fingerprint.py).
             self._persist_entry_data(**{
                 CONF_CACHED_ACCESS_TOKEN: self.access_token,
                 CONF_CACHED_TOKEN_EXPIRES_AT: self._token_expires_at,
@@ -1444,6 +1455,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # Yeni debounce task oluştur
                 async def delayed_send():
                     await asyncio.sleep(self._debounce_delay)
+                    # Keep writes to one code in order: an older write may
+                    # still be inside set_value (threading.Lock does not
+                    # wake waiters in arrival order).
+                    await self._async_wait_previous_send(code)
                     self._sending_codes[code] = asyncio.current_task()
                     try:
                         result = await self.hass.async_add_executor_job(
