@@ -36,7 +36,7 @@ async def async_setup_entry(
     
     for sensor_code, sensor_config in binary_sensor_configs.items():
         # Raw-field binary sensor: value is one field of a raw payload DP.
-        if "field_index" in sensor_config:
+        if "field_index" in sensor_config or "byte_offset" in sensor_config:
             raw_source = resolve_raw_source(coordinator, sensor_config)
             if raw_source and coordinator.data and raw_source in coordinator.data:
                 binary_sensors.append(TuyaHeatpumpBinarySensor(
@@ -160,14 +160,15 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        if "field_index" in self._config:
+        if "field_index" in self._config or "byte_offset" in self._config:
             raw_source = resolve_raw_source(self.coordinator, self._config)
             if raw_source is None or not self.coordinator.data or raw_source not in self.coordinator.data:
                 return None
             raw_value = decode_raw_field(
                 self.coordinator.data[raw_source].get('value'),
-                self._config['field_index'],
+                self._config.get('field_index', 0),
                 self._config.get('encoding', 'int32_be'),
+                byte_offset=self._config.get('byte_offset'),
             )
             if raw_value is None:
                 return None
@@ -216,7 +217,7 @@ class TuyaHeatpumpBinarySensor(BinarySensorEntity):
             self.coordinator.data is not None
         ):
             return False
-        if "field_index" in self._config:
+        if "field_index" in self._config or "byte_offset" in self._config:
             raw_source = resolve_raw_source(self.coordinator, self._config)
             return raw_source is not None and raw_source in self.coordinator.data
         if self._lookup_code() in self.coordinator.data:

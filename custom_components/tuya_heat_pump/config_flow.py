@@ -437,55 +437,60 @@ async def validate_input(hass: HomeAssistant, data: dict, connection_type: str) 
     )()
 
     coordinator = TuyaScaleDataUpdateCoordinator(hass, mock_config)
-
-    if connection_type == "cloud":
-        try:
-            # Token ve device info almayı dene
-            if not coordinator.access_token:
-                await coordinator._get_token()
-            await coordinator.get_device_info()
-        except Exception as err:
-            _LOGGER.error("Cloud validation error: %s", err)
-            if "token" in str(err).lower() or "auth" in str(err).lower():
-                raise InvalidAuth("Invalid credentials") from err
-            raise CannotConnect("Cannot connect to Tuya cloud") from err
-
-        title = f"Tuya Heat Pump ({data[CONF_DEVICE_ID]})"
-
-    else:
-        # Local validation
-        try:
-            device = tinytuya.Device(
-                dev_id=data[CONF_DEVICE_ID],
-                address=data[CONF_IP],
-                local_key=data[CONF_LOCAL_KEY],
-                version=float(data[CONF_PROTOCOL]),
-            )
-            status = await hass.async_add_executor_job(device.status)
-            if not status or 'dps' not in status:
-                raise CannotConnect("Failed to get device status")
-        except Exception as err:
-            _LOGGER.error("Local validation error: %s", err)
-            raise CannotConnect(f"Cannot connect to local device: {err}") from err
-
-        title = f"Tuya Heat Pump Local ({data[CONF_DEVICE_ID]})"
-
-    # Model mapping — Tuya'nın DP şeması her zaman cloud API'den gelir,
-    # bağlantı tipi local olsa bile (bkz. coordinator.get_device_model
-    # docstring'i, access_id/key her iki bağlantı tipinde de toplanıyor).
-    # Burada en baştan çekiyoruz ki climate-entity eşleme ekranı
-    # kurulumun SONUNDA (henüz hiçbir entity/coordinator kalıcı olarak
-    # oluşmamışken) gerçek switch/sensor/number/select listesinden
-    # dropdown gösterebilsin. Başarısız olursa (örn. model API'sine
-    # erişilemedi) sessizce "default" mapping'e düşer ve climate adımı
-    # sadece boş dropdown'lar gösterir — kurulumun geri kalanını
-    # etkilemez.
+    # Local mode starts listener/heartbeat/poll tasks (one socket each)
+    # in __init__; this throwaway coordinator must not leave them behind.
     try:
-        await coordinator.get_device_model()
-    except Exception as err:
-        _LOGGER.warning("Model mapping kurulum sırasında alınamadı: %s", err)
 
-    return {"title": title, "model_mapping": coordinator.model_mapping or {}}
+        if connection_type == "cloud":
+            try:
+                # Token ve device info almayı dene
+                if not coordinator.access_token:
+                    await coordinator._get_token()
+                await coordinator.get_device_info()
+            except Exception as err:
+                _LOGGER.error("Cloud validation error: %s", err)
+                if "token" in str(err).lower() or "auth" in str(err).lower():
+                    raise InvalidAuth("Invalid credentials") from err
+                raise CannotConnect("Cannot connect to Tuya cloud") from err
+
+            title = f"Tuya Heat Pump ({data[CONF_DEVICE_ID]})"
+
+        else:
+            # Local validation
+            try:
+                device = tinytuya.Device(
+                    dev_id=data[CONF_DEVICE_ID],
+                    address=data[CONF_IP],
+                    local_key=data[CONF_LOCAL_KEY],
+                    version=float(data[CONF_PROTOCOL]),
+                )
+                status = await hass.async_add_executor_job(device.status)
+                if not status or 'dps' not in status:
+                    raise CannotConnect("Failed to get device status")
+            except Exception as err:
+                _LOGGER.error("Local validation error: %s", err)
+                raise CannotConnect(f"Cannot connect to local device: {err}") from err
+
+            title = f"Tuya Heat Pump Local ({data[CONF_DEVICE_ID]})"
+
+        # Model mapping — Tuya'nın DP şeması her zaman cloud API'den gelir,
+        # bağlantı tipi local olsa bile (bkz. coordinator.get_device_model
+        # docstring'i, access_id/key her iki bağlantı tipinde de toplanıyor).
+        # Burada en baştan çekiyoruz ki climate-entity eşleme ekranı
+        # kurulumun SONUNDA (henüz hiçbir entity/coordinator kalıcı olarak
+        # oluşmamışken) gerçek switch/sensor/number/select listesinden
+        # dropdown gösterebilsin. Başarısız olursa (örn. model API'sine
+        # erişilemedi) sessizce "default" mapping'e düşer ve climate adımı
+        # sadece boş dropdown'lar gösterir — kurulumun geri kalanını
+        # etkilemez.
+        try:
+            await coordinator.get_device_model()
+        except Exception as err:
+            _LOGGER.warning("Model mapping kurulum sırasında alınamadı: %s", err)
+
+        return {"title": title, "model_mapping": coordinator.model_mapping or {}}
+    finally:
+        coordinator.cancel_background_tasks()
 
 
 class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):

@@ -493,7 +493,7 @@ class TuyaHeatpumpClimate(ClimateEntity, RestoreEntity):
         # Direct mode: hvac_mode maps straight onto the power switch (+
         # the mode-select, if the device has a heat/cool mode mapped).
         if hvac_mode == HVACMode.OFF:
-            await self._async_power(False)
+            await self._async_power(False, respect_min_cycle=False)
             return
 
         if hvac_mode == HVACMode.COOL and self._cool_value:
@@ -501,7 +501,7 @@ class TuyaHeatpumpClimate(ClimateEntity, RestoreEntity):
         elif hvac_mode == HVACMode.HEAT and self._mode_select_code and self._heat_value:
             await self._async_set_mode_select(self._heat_value)
 
-        await self._async_power(True)
+        await self._async_power(True, respect_min_cycle=False)
 
     async def async_turn_on(self) -> None:
         """Turn the heat pump on, resuming its last heat/cool mode."""
@@ -515,7 +515,7 @@ class TuyaHeatpumpClimate(ClimateEntity, RestoreEntity):
             # power — rewriting the mode here would be redundant, and
             # async_set_hvac_mode(HEAT) would wrongly force HEAT even if
             # the device was last in COOL.
-            await self._async_power(True)
+            await self._async_power(True, respect_min_cycle=False)
 
     async def async_turn_off(self) -> None:
         """Turn the heat pump off."""

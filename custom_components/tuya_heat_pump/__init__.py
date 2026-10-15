@@ -85,7 +85,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # bu noktadan SONRA, arka planda (bloklamadan) başlatılıyor.
     hass.loop.create_task(coordinator._async_start_mqtt())
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except BaseException:
+        # HA does not call unload for a failed setup: clean up here.
+        coordinator.cancel_background_tasks()
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        raise
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 

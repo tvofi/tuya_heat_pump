@@ -604,6 +604,12 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         ):
             if task is not None and not task.done():
                 task.cancel()
+        # Debounced writes still waiting must not fire on a coordinator
+        # that has been unloaded or replaced.
+        for _value, task in list(self._pending_commands.values()):
+            if not task.done():
+                task.cancel()
+        self._pending_commands.clear()
 
     async def _async_start_listener(self):
         """Start the background listener for instant updates.
@@ -642,19 +648,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await asyncio.sleep(0.05)
                 data = await self.hass.async_add_executor_job(self._local_receive)
-                if data and 'dps' in data:
-                    _LOGGER.debug("Instant update received: %s", data['dps'])
-                    new_data = self._process_local_dps(data['dps'])
-                    if new_data:
-                        self._apply_sent_cache(new_data)
-                        # Bu push muhtemelen sadece DEĞİŞEN DP'leri içeriyor
-                        # (tam bir status() snapshot'ı değil). self.data'nın
-                        # üzerine tamamen yazmak (replace) yerine mevcut
-                        # verinin üstüne merge ediyoruz — yoksa henüz bu
-                        # push'ta yer almayan tüm diğer sensör/switch/text
-                        # değerleri anında kaybolurdu.
-                        merged = {**(self.data or {}), **new_data}
-                        self.async_set_updated_data(merged)
+                self._merge_pushed_frame(data)
                 consecutive_errors = 0
                 await asyncio.sleep(0.1)
             except Exception as err:
@@ -667,6 +661,25 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 await asyncio.sleep(backoff)
 
+    def _merge_pushed_frame(self, data) -> None:
+        """Merge a frame read from the shared socket (a receive() push or
+        a heartbeat reply that happened to carry a status push) into
+        self.data."""
+        if not (isinstance(data, dict) and 'dps' in data):
+            return
+        _LOGGER.debug("Instant update received: %s", data['dps'])
+        new_data = self._process_local_dps(data['dps'])
+        if new_data:
+            self._apply_sent_cache(new_data)
+            # Bu push muhtemelen sadece DEĞİŞEN DP'leri içeriyor
+            # (tam bir status() snapshot'ı değil). self.data'nın
+            # üzerine tamamen yazmak (replace) yerine mevcut
+            # verinin üstüne merge ediyoruz — yoksa henüz bu
+            # push'ta yer almayan tüm diğer sensör/switch/text
+            # değerleri anında kaybolurdu.
+            merged = {**(self.data or {}), **new_data}
+            self.async_set_updated_data(merged)
+
     async def _heartbeat_loop(self):
         """Loop to keep the connection alive. _listen_loop ile aynı
         gerekçeyle: local modda bağımsız bir periyodik poll yok, bu
@@ -676,7 +689,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         while True:
             try:
                 if self.local_device:
-                    await self.hass.async_add_executor_job(self._local_heartbeat)
+                    reply = await self.hass.async_add_executor_job(self._local_heartbeat)
+                    # nowait=False reads one frame; if a status push won
+                    # the race it arrives here instead of in _listen_loop.
+                    self._merge_pushed_frame(reply)
                 await asyncio.sleep(5)
             except Exception as err:
                 _LOGGER.debug(
@@ -691,7 +707,17 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         while True:
             try:
                 await asyncio.sleep(self._FALLBACK_POLL_INTERVAL)
-                await self.async_request_refresh()
+                # Not async_request_refresh(): a single transient failure
+                # (lock timeout, empty frame) would mark every entity
+                # unavailable until the next push. Keep the last data and
+                # try again next cycle instead.
+                try:
+                    data = await self._async_update_data()
+                except UpdateFailed as err:
+                    _LOGGER.debug("Fallback poll failed (%s); keeping last data.", err)
+                    continue
+                if data:
+                    self.async_set_updated_data(data)
             except asyncio.CancelledError:
                 raise
             except Exception as err:
@@ -1196,10 +1222,16 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # tek noktadan normalize ediyoruz ki her code/model için ayrı ayrı
         # "int(value)" yazmaya gerek kalmasın.
         #
-        # Only when no scaling was applied (value == display_value): on an
-        # asymmetrically scaled DP a whole wire value like 4.0 (from 40)
-        # truncated to int is read differently by some devices.
-        if isinstance(value, float) and value.is_integer() and value == display_value:
+        # Exception: a write-side DOWN-scale (e.g. api_conversion
+        # "value / 10", upstream issue #53) — there a whole wire value
+        # like 4.0 (from 40) is kept as-is, because some devices read the
+        # bare integer differently. Up-scaled ("value * 10") and unscaled
+        # writes are still normalized to int (issue #80).
+        downscaled = (
+            isinstance(display_value, (int, float))
+            and abs(value) < abs(display_value)
+        ) if isinstance(value, float) else False
+        if isinstance(value, float) and value.is_integer() and not downscaled:
             value = int(value)
         try:
             if self.connection_type == "cloud":
@@ -1271,7 +1303,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                         )
                         self.access_token = None
                         self._token_expires_at = 0.0
-                        return await self.send_command(code, value, _retry=False)
+                        return await self.send_command(
+                            code, value, _retry=False, display_value=display_value,
+                        )
                     _LOGGER.error("❌ Cloud komut başarısız: %s = %s → %s", code, value, error_msg)
                     return False
                   
