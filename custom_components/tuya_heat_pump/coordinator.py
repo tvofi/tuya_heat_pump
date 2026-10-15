@@ -20,6 +20,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 from .const import (
+    CONF_CACHED_MODEL_ID,
+    CONF_CACHED_MODEL_DEVICE_ID,
     DOMAIN,
     DEFAULT_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL,
@@ -51,7 +53,7 @@ import tinytuya
 from .model_loader import load_model_mapping, async_load_model_mapping
 from .raw_codec import encode_raw_field
 from .conversion import Conversion
-from .config_fingerprint import config_fingerprint
+from .config_fingerprint import CACHE_ONLY_KEYS, config_fingerprint
 from .discovery import (
     ENTITY_CATEGORIES,
     build_discovered_mapping,
@@ -447,7 +449,13 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             return
 
         # Cache-only keys: excluded from config_fingerprint, so the update
-        # listener does not reload for this write.
+        # listener does not reload for this write. A key missing from
+        # CACHE_ONLY_KEYS would make every start reload once more.
+        unknown = set(fields) - CACHE_ONLY_KEYS
+        if unknown:
+            _LOGGER.warning(
+                "Persisting non-cache keys %s: add them to CACHE_ONLY_KEYS", sorted(unknown)
+            )
         self.hass.config_entries.async_update_entry(
             entry, data={**entry.data, **fields}
         )
@@ -670,11 +678,19 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     continue
                 flushes.append(self._async_flush_write(code, dp_id, value))
             if flushes or in_flight:
-                # One overall deadline, longer than set_value's 10 s lock wait.
-                await asyncio.wait(
-                    [asyncio.ensure_future(f) for f in flushes] + in_flight,
-                    timeout=12,
+                # One overall deadline: a flush may first wait up to
+                # _FLUSH_PREV_WAIT for an older write of its code, then
+                # set_value may wait up to 10 s for the socket lock.
+                futures = [asyncio.ensure_future(f) for f in flushes]
+                _done, pending = await asyncio.wait(
+                    futures + in_flight,
+                    timeout=self._FLUSH_PREV_WAIT + 12,
                 )
+                # Flushes still running past the deadline would only hit
+                # the closed socket; cancel them instead of orphaning them.
+                for fut in pending:
+                    if fut in futures:
+                        fut.cancel()
         self.cancel_background_tasks()
         if getattr(self, "local_device", None) is not None:
             try:
@@ -683,15 +699,18 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 pass
             self.local_device = None
 
-    async def _async_wait_previous_send(self, code: str) -> None:
-        """Wait (bounded by set_value's own lock timeout) for a write of
-        this code that is already being handed to the device."""
+    _FLUSH_PREV_WAIT = 2
+
+    async def _async_wait_previous_send(self, code: str, timeout: float = 12) -> None:
+        """Wait (by default bounded by set_value's own lock timeout) for a
+        write of this code that is already being handed to the device."""
         prev = self._sending_codes.get(code)
         if prev is not None and prev is not asyncio.current_task() and not prev.done():
-            await asyncio.wait({prev}, timeout=12)
+            await asyncio.wait({prev}, timeout=timeout)
 
     async def _async_flush_write(self, code: str, dp_id: int, value: Any) -> None:
-        await self._async_wait_previous_send(code)
+        # Short wait at shutdown: the flush must still fit the deadline.
+        await self._async_wait_previous_send(code, timeout=self._FLUSH_PREV_WAIT)
         try:
             await self.hass.async_add_executor_job(self._local_set_value, dp_id, value)
             _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
@@ -1212,8 +1231,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # geldiğinde tekrar denesin diye.
                 if self.model_id and self.model_id != "default":
                     self._persist_entry_data(
-                        cached_model_id=self.model_id,
-                        cached_model_device_id=self.device_id,
+                        **{CONF_CACHED_MODEL_ID: self.model_id,
+                           CONF_CACHED_MODEL_DEVICE_ID: self.device_id},
                         **{CONF_CACHED_MODEL_SCHEMA: compact_schema(self.device_schema)},
                     )
                     _LOGGER.info("✅ model_id config_entry'e kaydedildi: %s", self.model_id)
@@ -1460,6 +1479,12 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # wake waiters in arrival order).
                     await self._async_wait_previous_send(code)
                     self._sending_codes[code] = asyncio.current_task()
+                    # Waiting may have outlived the sent-value cache window;
+                    # restart it so the older write's echo does not
+                    # overwrite this value on screen.
+                    cached = self._sent_value_cache.get(code)
+                    if cached is not None:
+                        self._sent_value_cache[code] = (cached[0], time.time())
                     try:
                         result = await self.hass.async_add_executor_job(
                             self._local_set_value, dp_id, value

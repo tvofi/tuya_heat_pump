@@ -90,11 +90,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    except BaseException:
+    except BaseException as err:
         # HA does not call unload for a failed setup: clean up here.
         # Let the start finish (cancelling the task cannot stop its
         # executor thread) so the stop below sees the MQTT client.
-        await asyncio.wait({mqtt_start}, timeout=30)
+        await asyncio.wait({mqtt_start}, timeout=30 if not isinstance(err, asyncio.CancelledError) else 1)
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         # Platforms that did load stay registered otherwise (HA does not
@@ -103,8 +103,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for platform in PLATFORMS:
             try:
                 await hass.config_entries.async_forward_entry_unload(entry, platform)
-            except Exception:
-                pass
+            except Exception as unload_err:  # e.g. platform never loaded
+                _LOGGER.debug("Unload of %s skipped: %s", platform, unload_err)
         await coordinator.async_close_local()
         hass.data[DOMAIN].pop(entry.entry_id, None)
         clear_model_cache(coordinator.model_id)
@@ -132,9 +132,17 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     the cache-only keys out (config_fingerprint.py).
     """
     coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    if coordinator is not None and config_fingerprint(entry) == coordinator.applied_config:
+    if coordinator is None:
+        # Not loaded (mid-unload, or removed): the next setup reads the
+        # current settings anyway.
+        return
+    fingerprint = config_fingerprint(entry)
+    if fingerprint == coordinator.applied_config:
         _LOGGER.debug("Only cache keys changed in the config entry — no reload.")
         return
+    # Mark this change as handled before reloading: one save can update
+    # data and options separately and queue this listener twice.
+    coordinator.applied_config = fingerprint
     await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

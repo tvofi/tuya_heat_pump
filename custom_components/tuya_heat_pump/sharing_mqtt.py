@@ -361,6 +361,8 @@ class SharingMQTT:
         loop'una güvenli geçiş şart (call_soon_threadsafe /
         run_coroutine_threadsafe kullanmadan coordinator'a dokunmak
         thread-safety ihlali olur)."""
+        if self._stopped:
+            return  # coordinator unloaded; a late start may still deliver
         if device.id != self._coordinator.device_id:
             return  # Manager tum hesabi dinliyor, bizi ilgilendirmeyen cihaz
 

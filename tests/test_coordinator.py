@@ -64,17 +64,47 @@ def _sent(conn="local"):
     c._optimistic_update = lambda code, v: None
     return c
 
-def test_int_normalization():
-    # wire value after up-scale must be int; down-scale keeps float
-    import inspect
-    src = inspect.getsource(C.send_command)
-    assert "_is_write_downscale" in src
-    def norm(value, display):
-        downscaled = (isinstance(display,(int,float)) and abs(value) < abs(display)) if isinstance(value,float) else False
-        return int(value) if isinstance(value,float) and value.is_integer() and not downscaled else value
-    assert norm(400.0, 40.0) == 400 and isinstance(norm(400.0, 40.0), int)
-    assert isinstance(norm(4.0, 40.0), float)
-    assert isinstance(norm(39.0, 39.0), int)
+def _local_coord(mapping):
+    """Bare coordinator wired for the local send path (no device I/O)."""
+    c = mk(mapping)
+    c.connection_type = "local"; c._debounce_delay = 0
+    c._sent_value_cache = {}; c.data = {}
+    c.dp_mapping = {1: "up", 2: "down", 3: "plain", 4: "f"}
+    c._optimistic_update = lambda code, v: None
+    sent = []
+    class Hass:
+        loop = None
+        async def async_add_executor_job(self, f, *a): return f(*a)
+    c.hass = Hass()
+    c._local_set_value = lambda dp, v: sent.append((dp, v)) or True
+    c.local_device = object()
+    return c, sent
+
+def test_send_command_wire_types():
+    """Real send_command: up-scaled and unit-converted writes go out as
+    int (issue #80); a plain 'value / N' down-scale keeps the float
+    (upstream issue #53)."""
+    mapping = {"numbers": {
+        "up": {"code": "up", "api_conversion": "value * 10"},
+        "down": {"code": "down", "api_conversion": "value / 10"},
+        "plain": {"code": "plain"},
+        "f": {"code": "f", "api_conversion": "(value * 9/5) + 32"},
+    }}
+    async def run():
+        c, sent = _local_coord(mapping)
+        c.hass.loop = asyncio.get_running_loop()
+        assert await c.send_command("up", 400.0, display_value=40.0)
+        assert await c.send_command("down", 4.0, display_value=40.0)
+        assert await c.send_command("plain", 39.0)
+        assert await c.send_command("f", -4.0, display_value=-20.0)
+        for _ in range(5):
+            await asyncio.sleep(0.01)
+        got = dict(sent)
+        assert got[1] == 400 and type(got[1]) is int
+        assert got[2] == 4.0 and type(got[2]) is float
+        assert got[3] == 39 and type(got[3]) is int
+        assert got[4] == -4 and type(got[4]) is int
+    asyncio.run(run())
 
 def test_merge_heartbeat_frame():
     c = mk({}); c.data = {"a": {"value": 1}}; got = []
@@ -193,4 +223,81 @@ def test_mqtt_start_aborts_after_stop():
         assert await m._abort_if_stopped() is False
         await m.async_stop()
         assert await m._abort_if_stopped() is True
+    asyncio.run(run())
+
+
+def _entry(data, options, entry_id="e1"):
+    return types.SimpleNamespace(entry_id=entry_id, data=data, options=options)
+
+def _listener_hass(coordinator, entry_id="e1"):
+    from custom_components.tuya_heat_pump.const import DOMAIN
+    reloads = []
+    async def async_reload(eid): reloads.append(eid)
+    hass = types.SimpleNamespace(
+        data={DOMAIN: {entry_id: coordinator} if coordinator else {}},
+        config_entries=types.SimpleNamespace(async_reload=async_reload),
+    )
+    return hass, reloads
+
+def test_update_listener_branches():
+    from custom_components.tuya_heat_pump import async_update_options
+    from custom_components.tuya_heat_pump.config_fingerprint import config_fingerprint
+    async def run():
+        start = _entry({"ip": "1.2.3.4"}, {"x": 1})
+        coord = types.SimpleNamespace(applied_config=config_fingerprint(start))
+        # cache-only change: no reload
+        hass, reloads = _listener_hass(coord)
+        await async_update_options(hass, _entry({"ip": "1.2.3.4", "cached_access_token": "t"}, {"x": 1}))
+        assert reloads == []
+        # real change: one reload, and the same change queued twice reloads once
+        changed = _entry({"ip": "5.6.7.8"}, {"x": 1})
+        await async_update_options(hass, changed)
+        await async_update_options(hass, changed)
+        assert reloads == ["e1"]
+        # no coordinator (unloaded): no reload
+        hass, reloads = _listener_hass(None)
+        await async_update_options(hass, changed)
+        assert reloads == []
+    asyncio.run(run())
+
+def test_start_local_false_opens_no_socket(tmp_path):
+    """Validation coordinator: no tinytuya device, no background tasks."""
+    from homeassistant.core import HomeAssistant
+    from custom_components.tuya_heat_pump.const import CONF_CONNECTION_TYPE
+    async def run():
+        from homeassistant.helpers import frame
+        hass = HomeAssistant(str(tmp_path))
+        frame.async_setup(hass)
+        entry = types.SimpleNamespace(entry_id=None, options={}, data={
+            CONF_CONNECTION_TYPE: "local", "device_id": "d", "access_id": "a",
+            "access_key": "k", "region": "eu", "ip": "10.0.0.9",
+            "local_key": "0123456789abcdef", "protocol": "3.4",
+        })
+        c = C(hass, entry, start_local=False)
+        assert c.local_device is None
+        assert c._start_listener_task is None and c._listener_task is None
+        await c.async_close_local()
+        await hass.async_stop(force=True)
+    asyncio.run(run())
+
+def test_flush_respects_deadline_and_cancels():
+    """A stuck older write must not eat the flush deadline forever; a
+    flush still running at the deadline is cancelled, not orphaned."""
+    async def run():
+        c, sent = _local_coord({})
+        c.hass.loop = asyncio.get_running_loop()
+        c._FLUSH_PREV_WAIT = 0.05
+        import threading
+        c._local_socket_lock = threading.Lock(); c._LOCK_ACQUIRE_TIMEOUT = 1
+        c._start_listener_task = c._listener_task = c._heartbeat_task = c._fallback_poll_task = None
+        stuck = asyncio.ensure_future(asyncio.sleep(100))
+        c._sending_codes["plain"] = stuck          # older write that never ends
+        pending = asyncio.ensure_future(asyncio.sleep(100))
+        c._pending_commands = {"plain": (7, pending)}
+        class Dev:
+            def close(self): pass
+        c.local_device = Dev()
+        await asyncio.wait_for(c.async_close_local(), timeout=5)
+        assert sent == [(3, 7)]
+        stuck.cancel()
     asyncio.run(run())
