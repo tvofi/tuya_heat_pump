@@ -1,6 +1,7 @@
 """DataUpdateCoordinator for Tuya Heatpump."""
 from __future__ import annotations
 import logging
+import re
 import time
 import hmac
 import hashlib
@@ -605,11 +606,42 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             if task is not None and not task.done():
                 task.cancel()
         # Debounced writes still waiting must not fire on a coordinator
-        # that has been unloaded or replaced.
+        # that has been unloaded or replaced (async_close_local flushes
+        # them first on a normal unload).
         for _value, task in list(self._pending_commands.values()):
             if not task.done():
                 task.cancel()
         self._pending_commands.clear()
+
+    async def async_close_local(self) -> None:
+        """Shut down the local connection: send debounced writes still
+        waiting (so a change made just before a reload is not lost), stop
+        the background tasks and close the persistent socket. Safe in
+        cloud mode and when called more than once."""
+        if self.connection_type != "cloud" and getattr(self, "local_device", None):
+            for code, (value, task) in list(self._pending_commands.items()):
+                if task.done():
+                    continue
+                task.cancel()
+                dp_id = next((d for d, c in self.dp_mapping.items() if c == code), None)
+                if dp_id is None:
+                    continue
+                try:
+                    await asyncio.wait_for(
+                        self.hass.async_add_executor_job(self._local_set_value, dp_id, value),
+                        timeout=5,
+                    )
+                    _LOGGER.info("Flushed pending write on shutdown: %s = %s", code, value)
+                except Exception as err:
+                    _LOGGER.warning("Pending write %s = %s lost on shutdown: %s", code, value, err)
+        self.cancel_background_tasks()
+        device = getattr(self, "local_device", None)
+        if device is not None:
+            self.local_device = None
+            try:
+                await self.hass.async_add_executor_job(device.close)
+            except Exception:  # best effort; GC closes it otherwise
+                pass
 
     async def _async_start_listener(self):
         """Start the background listener for instant updates.
@@ -1161,9 +1193,10 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
     # KOMUT GÖNDERME
     # ============================================================================
 
-    def _find_conversion_expr(self, code: str) -> str | None:
-        """This code's read-side `conversion` expression from the model
-        mapping, or None (raw-field entries, unknown codes, no conversion)."""
+    def _find_conversion_expr(self, code: str, field: str = 'conversion') -> str | None:
+        """This code's `conversion` (read side) or `api_conversion` (write
+        side) expression from the model mapping, or None (raw-field
+        entries, unknown codes, no such expression)."""
         if not self.model_mapping:
             return None
         for entity_type in ('sensors', 'binary_sensors', 'switches', 'numbers', 'selects', 'texts'):
@@ -1171,8 +1204,18 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 if 'field_index' in cfg:
                     continue
                 if cfg.get('code', key) == code:
-                    return cfg.get('conversion')
+                    return cfg.get(field)
         return None
+
+    _DOWNSCALE_RE = re.compile(r"^\s*value\s*/\s*[\d.]+\s*$")
+
+    def _is_write_downscale(self, code: str) -> bool:
+        """True when this DP's api_conversion is a plain division
+        ("value / 10"). Decided from the model file, not from the size of
+        the result, so a unit conversion like °C→°F is never mistaken for
+        one."""
+        expr = self._find_conversion_expr(code, 'api_conversion')
+        return bool(expr and self._DOWNSCALE_RE.match(expr))
 
     def _resolve_cache_value(self, code: str, value: Any, display_value: Any) -> Any:
         """What to cache (and show optimistically) after a write so the
@@ -1232,11 +1275,11 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # like 4.0 (from 40) is kept as-is, because some devices read the
         # bare integer differently. Up-scaled ("value * 10") and unscaled
         # writes are still normalized to int (issue #80).
-        downscaled = (
-            isinstance(display_value, (int, float))
-            and abs(value) < abs(display_value)
-        ) if isinstance(value, float) else False
-        if isinstance(value, float) and value.is_integer() and not downscaled:
+        if (
+            isinstance(value, float)
+            and value.is_integer()
+            and not (value != display_value and self._is_write_downscale(code))
+        ):
             value = int(value)
         try:
             if self.connection_type == "cloud":

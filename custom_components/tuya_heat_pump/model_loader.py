@@ -9,6 +9,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # Cache for loaded models
 _MODEL_CACHE = {}
+# model_id -> name of the module that actually backs it (an unknown
+# model_id falls back to models.default).
+_MODEL_SOURCE: dict[str, str] = {}
 
 
 def clear_model_cache(model_id: str | None = None) -> None:
@@ -25,6 +28,7 @@ def clear_model_cache(model_id: str | None = None) -> None:
             del sys.modules[name]
         return
     _MODEL_CACHE.pop(model_id, None)
+    sys.modules.pop(_MODEL_SOURCE.pop(model_id, f"{prefix}{model_id}"), None)
     sys.modules.pop(f"{prefix}{model_id}", None)
 
 
@@ -50,6 +54,8 @@ async def async_load_model_mapping(hass: HomeAssistant, model_id: str = None) ->
                 return importlib.import_module(".models.default", __package__)
         
         model_module = await hass.async_add_executor_job(_import_model)
+        if model_module is not None:
+            _MODEL_SOURCE[model_id] = model_module.__name__
         
         if model_module:
             # Create mapping dictionary
@@ -106,7 +112,10 @@ def load_model_mapping(model_id: str = None) -> Dict[str, Any]:
         # Try to load default module directly
         if model_id == "default":
             try:
-                from .models import default as _default_module
+                # importlib (not `from .models import default`): the
+                # latter is satisfied by the stale package attribute even
+                # after clear_model_cache() dropped it from sys.modules.
+                _default_module = importlib.import_module(".models.default", __package__)
                 
                 mapping = {
                     "sensors": getattr(_default_module, "SENSOR_TYPES", {}),

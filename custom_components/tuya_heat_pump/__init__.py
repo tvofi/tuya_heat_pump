@@ -62,13 +62,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Local mode started its listener/heartbeat/poll tasks in the
         # coordinator's __init__; HA's retry builds a new coordinator, so
         # stop this attempt's tasks or they pile up (one socket each).
-        coordinator.cancel_background_tasks()
+        await coordinator.async_close_local()
         raise ConfigEntryNotReady(
             f"Tuya Heat Pump setup timed out after {SETUP_TIMEOUT}s "
             f"(device_id={coordinator.device_id}, elapsed={_elapsed():.1f}s) — will retry"
         ) from err
     except BaseException:
-        coordinator.cancel_background_tasks()
+        await coordinator.async_close_local()
         raise
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
@@ -83,14 +83,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # yapmadan hemen döner — davranış hiç değişmez. Model_mapping'in
     # kesin dolu olduğu (get_device_model + first_refresh tamamlandığı)
     # bu noktadan SONRA, arka planda (bloklamadan) başlatılıyor.
-    hass.loop.create_task(coordinator._async_start_mqtt())
+    mqtt_start = hass.loop.create_task(coordinator._async_start_mqtt())
 
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except BaseException:
         # HA does not call unload for a failed setup: clean up here.
-        coordinator.cancel_background_tasks()
+        mqtt_start.cancel()
+        if coordinator.sharing_mqtt is not None:
+            await coordinator.sharing_mqtt.async_stop()
+        await coordinator.async_close_local()
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        if not hass.data[DOMAIN]:
+            async_unload_services(hass)
         raise
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
@@ -122,12 +127,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         coordinator: TuyaScaleDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-        coordinator.cancel_background_tasks()
-        if getattr(coordinator, "local_device", None) is not None:
-            try:
-                await hass.async_add_executor_job(coordinator.local_device.close)
-            except Exception:  # best effort; GC closes it otherwise
-                pass
+        await coordinator.async_close_local()
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         hass.data[DOMAIN].pop(entry.entry_id)
