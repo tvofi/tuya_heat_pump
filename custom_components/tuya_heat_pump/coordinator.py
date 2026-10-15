@@ -1424,7 +1424,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     task = self._pending_commands[code][1]
                     if self._sending_codes.get(code) is not task:
                         task.cancel()
-                    _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
+                        _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
                
                 # Son gönderilen değeri cache'e yaz
                 cache_value = self._resolve_cache_value(code, value, display_value)
