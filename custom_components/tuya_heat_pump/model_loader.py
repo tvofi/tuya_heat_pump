@@ -1,6 +1,7 @@
 """Model loader for Tuya Heat Pump."""
 import logging
 import importlib
+import sys
 from typing import Dict, Any
 from homeassistant.core import HomeAssistant
 
@@ -8,6 +9,24 @@ _LOGGER = logging.getLogger(__name__)
 
 # Cache for loaded models
 _MODEL_CACHE = {}
+
+
+def clear_model_cache(model_id: str | None = None) -> None:
+    """Drop cached model mapping(s) so the next load re-reads the file.
+
+    _MODEL_CACHE alone is not enough: sys.modules still holds the imported
+    model module, and importlib.import_module() would return it as-is.
+    Called on unload so reloading the entry picks up an edited model file.
+    """
+    prefix = f"{__package__}.models."
+    if model_id is None:
+        _MODEL_CACHE.clear()
+        for name in [n for n in sys.modules if n.startswith(prefix)]:
+            del sys.modules[name]
+        return
+    _MODEL_CACHE.pop(model_id, None)
+    sys.modules.pop(f"{prefix}{model_id}", None)
+
 
 async def async_load_model_mapping(hass: HomeAssistant, model_id: str = None) -> Dict[str, Any]:
     """Load model mapping based on model ID - ASYNC VERSION."""
