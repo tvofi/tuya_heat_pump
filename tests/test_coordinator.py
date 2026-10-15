@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("homeassistant")
+import os
+if os.environ.get("TUYA_HP_REQUIRE_HA"):
+    import homeassistant  # noqa: F401  CI: a broken HA import must fail, not skip
+else:
+    pytest.importorskip("homeassistant")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import importlib
 pkg = "custom_components.tuya_heat_pump"
@@ -55,14 +59,6 @@ def test_write_priority():
     import threading
     c = mk({}); c._write_pending = threading.Event(); c._write_pending.set()
     assert c._local_heartbeat() is None and c._local_receive() is None
-
-def _sent(conn="local"):
-    c = mk({"numbers": {"up": {"code":"up","api_conversion":"value * 10"},
-                        "down": {"code":"down","api_conversion":"value / 10"}}})
-    c.connection_type = conn; c._pending_commands = {}; c._sent_value_cache = {}
-    c._debounce_delay = 0; c.data = {}; c.sent = []
-    c._optimistic_update = lambda code, v: None
-    return c
 
 def _local_coord(mapping):
     """Bare coordinator wired for the local send path (no device I/O)."""
@@ -300,4 +296,47 @@ def test_flush_respects_deadline_and_cancels():
         await asyncio.wait_for(c.async_close_local(), timeout=5)
         assert sent == [(3, 7)]
         stuck.cancel()
+    asyncio.run(run())
+
+
+def test_flush_cancelled_at_deadline():
+    """A flush whose set_value never returns is cancelled at the deadline."""
+    async def run():
+        c, sent = _local_coord({})
+        c.hass.loop = asyncio.get_running_loop()
+        c._FLUSH_PREV_WAIT = -11.9   # deadline = 0.1 s
+        import threading
+        c._local_socket_lock = threading.Lock(); c._LOCK_ACQUIRE_TIMEOUT = 1
+        c._start_listener_task = c._listener_task = c._heartbeat_task = c._fallback_poll_task = None
+        started = []
+        class Hass:
+            loop = asyncio.get_running_loop()
+            async def async_add_executor_job(self, f, *a):
+                if f == c._local_set_value:
+                    started.append(1); await asyncio.sleep(100)
+                return f(*a)
+        c.hass = Hass()
+        c._pending_commands = {"plain": (7, asyncio.ensure_future(asyncio.sleep(100)))}
+        class Dev:
+            def close(self): pass
+        c.local_device = Dev()
+        await asyncio.wait_for(c.async_close_local(), timeout=5)
+        await asyncio.sleep(0)
+        assert started == [1] and c.local_device is None
+        assert not [t for t in asyncio.all_tasks()
+                    if t is not asyncio.current_task() and "flush" in repr(t.get_coro())]
+    asyncio.run(run())
+
+def test_reload_failure_restores_applied_config():
+    from custom_components.tuya_heat_pump import async_update_options
+    from custom_components.tuya_heat_pump.config_fingerprint import config_fingerprint
+    async def run():
+        start = _entry({"ip": "1.2.3.4"}, {})
+        coord = types.SimpleNamespace(applied_config=config_fingerprint(start))
+        hass, _ = _listener_hass(coord)
+        async def boom(eid): raise RuntimeError("reload failed")
+        hass.config_entries.async_reload = boom
+        with pytest.raises(RuntimeError):
+            await async_update_options(hass, _entry({"ip": "5.6.7.8"}, {}))
+        assert coord.applied_config == config_fingerprint(start)
     asyncio.run(run())

@@ -142,8 +142,14 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
         return
     # Mark this change as handled before reloading: one save can update
     # data and options separately and queue this listener twice.
+    previous = coordinator.applied_config
     coordinator.applied_config = fingerprint
-    await hass.config_entries.async_reload(entry.entry_id)
+    try:
+        await hass.config_entries.async_reload(entry.entry_id)
+    except Exception:
+        # Not applied: let the next save retry.
+        coordinator.applied_config = previous
+        raise
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""

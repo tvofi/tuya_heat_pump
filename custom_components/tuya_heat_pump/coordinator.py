@@ -710,6 +710,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_flush_write(self, code: str, dp_id: int, value: Any) -> None:
         # Short wait at shutdown: the flush must still fit the deadline.
+        # Trade-off: if the older write is still blocked on the socket lock
+        # after this, both contend for it and either may land last.
         await self._async_wait_previous_send(code, timeout=self._FLUSH_PREV_WAIT)
         try:
             await self.hass.async_add_executor_job(self._local_set_value, dp_id, value)
@@ -1162,8 +1164,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # config_entry.data içinde daha önce kaydedilmiş model_id var mı?
         # Anahtar olarak device_id kullanılıyor → aynı modelden 2 cihaz olsa bile
         # her biri kendi config_entry'sine yazar, birbirini etkilemez.
-        cached_model_id = self.config_entry.data.get("cached_model_id")
-        cached_for_device = self.config_entry.data.get("cached_model_device_id")
+        cached_model_id = self.config_entry.data.get(CONF_CACHED_MODEL_ID)
+        cached_for_device = self.config_entry.data.get(CONF_CACHED_MODEL_DEVICE_ID)
         cached_schema = self.config_entry.data.get(CONF_CACHED_MODEL_SCHEMA)
 
         # The schema is only needed for register discovery. Entries that
@@ -1482,9 +1484,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     # Waiting may have outlived the sent-value cache window;
                     # restart it so the older write's echo does not
                     # overwrite this value on screen.
-                    cached = self._sent_value_cache.get(code)
-                    if cached is not None:
-                        self._sent_value_cache[code] = (cached[0], time.time())
+                    self._sent_value_cache[code] = (cache_value, time.time())
                     try:
                         result = await self.hass.async_add_executor_job(
                             self._local_set_value, dp_id, value

@@ -15,4 +15,6 @@ jobs:
       - name: Install dependencies
         run: pip install homeassistant tinytuya tuya-device-sharing-sdk pytest
       - name: Run tests
+        env:
+          TUYA_HP_REQUIRE_HA: "1"
         run: python -m pytest -q tests
