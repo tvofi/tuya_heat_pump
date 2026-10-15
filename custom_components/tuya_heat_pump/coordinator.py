@@ -668,6 +668,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         if not (isinstance(data, dict) and 'dps' in data):
             return
         _LOGGER.debug("Instant update received: %s", data['dps'])
+        # A frame from the device proves it is online (a failed fallback
+        # poll may have flagged it offline).
+        self.is_online = True
         new_data = self._process_local_dps(data['dps'])
         if new_data:
             self._apply_sent_cache(new_data)
@@ -717,7 +720,9 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.debug("Fallback poll failed (%s); keeping last data.", err)
                     continue
                 if data:
-                    self.async_set_updated_data(data)
+                    # Merge onto current data: a push may have landed
+                    # while this poll was awaiting the device.
+                    self.async_set_updated_data({**(self.data or {}), **data})
             except asyncio.CancelledError:
                 raise
             except Exception as err:

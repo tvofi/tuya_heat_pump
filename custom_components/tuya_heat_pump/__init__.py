@@ -123,6 +123,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         coordinator: TuyaScaleDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
         coordinator.cancel_background_tasks()
+        if getattr(coordinator, "local_device", None) is not None:
+            try:
+                await hass.async_add_executor_job(coordinator.local_device.close)
+            except Exception:  # best effort; GC closes it otherwise
+                pass
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         hass.data[DOMAIN].pop(entry.entry_id)
