@@ -170,7 +170,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
         # Shutdown state (see async_close_local).
         self._closing = False
         self._local_closed = False
-        self._sending_codes: set[str] = set()
+        # code -> the debounce task currently handing its value to the device
+        self._sending_codes: dict[str, asyncio.Task] = {}
         # Debounce için (local)
         self._pending_commands = {}  # code → (value, task)
         self._debounce_delay = 1.0   # 1 saniye
@@ -654,7 +655,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             for code, (value, task) in list(self._pending_commands.items()):
                 if task.done():
                     continue
-                if code in self._sending_codes:
+                if self._sending_codes.get(code) is task:
                     # Already handed to the device: wait for it, don't resend.
                     in_flight.append(task)
                     continue
@@ -1249,8 +1250,8 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     continue
                 # A read-only sensor may share the code of the writable
                 # number; for api_conversion, look past entries without it.
-                if field == 'conversion' or field in cfg:
-                    return cfg.get(field)
+                if field in cfg:
+                    return cfg[field]
         return None
 
     _DOWNSCALE_RE = re.compile(r"^\s*value\s*/\s*[\d.]+\s*$")
@@ -1417,9 +1418,12 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     return False
                
                 # Mevcut bekleyen task varsa iptal et
+                # (a write already being sent is left to finish: cancelling
+                # it cannot stop its executor thread)
                 if code in self._pending_commands:
                     task = self._pending_commands[code][1]
-                    task.cancel()
+                    if self._sending_codes.get(code) is not task:
+                        task.cancel()
                     _LOGGER.debug("Önceki debounce iptal edildi: %s", code)
                
                 # Son gönderilen değeri cache'e yaz
@@ -1440,7 +1444,7 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 # Yeni debounce task oluştur
                 async def delayed_send():
                     await asyncio.sleep(self._debounce_delay)
-                    self._sending_codes.add(code)
+                    self._sending_codes[code] = asyncio.current_task()
                     try:
                         result = await self.hass.async_add_executor_job(
                             self._local_set_value, dp_id, value
@@ -1452,8 +1456,13 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                     except Exception as err:
                         _LOGGER.error("Debounce gönderme hatası %s = %s: %s", code, value, err)
                     finally:
-                        self._sending_codes.discard(code)
-                        if code in self._pending_commands:
+                        # Only clear our own entry: a newer write for the
+                        # same code may already have replaced it.
+                        me = asyncio.current_task()
+                        if self._sending_codes.get(code) is me:
+                            del self._sending_codes[code]
+                        entry = self._pending_commands.get(code)
+                        if entry is not None and entry[1] is me:
                             del self._pending_commands[code]
                
                 task = self.hass.loop.create_task(delayed_send())

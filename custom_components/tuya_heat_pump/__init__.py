@@ -89,8 +89,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except BaseException:
         # HA does not call unload for a failed setup: clean up here.
-        mqtt_start.cancel()
-        await asyncio.gather(mqtt_start, return_exceptions=True)
+        # Let the start finish (cancelling the task cannot stop its
+        # executor thread) so the stop below sees the MQTT client.
+        await asyncio.wait({mqtt_start}, timeout=30)
         if coordinator.sharing_mqtt is not None:
             await coordinator.sharing_mqtt.async_stop()
         await coordinator.async_close_local()
