@@ -1656,7 +1656,15 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 self._carry_forward_missing(data)
                 self._apply_sent_cache(data)
                 return data
-               
+
+            except ConfigEntryAuthFailed:
+                # _get_token raises this when the token endpoint rejects the
+                # credentials (HTTP != 200 or success=false) — e.g. Tuya
+                # refusing the account/IP. Folding it into UpdateFailed
+                # silently marks every entity unavailable and the poll just
+                # keeps retrying; letting it propagate starts HA's reauth
+                # flow so the user actually sees why the data is gone.
+                raise
             except Exception as err:
                 self.is_online = False
                 if self._previous_online != self.is_online:
