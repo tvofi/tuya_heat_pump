@@ -72,6 +72,15 @@ MODEL_NAME = "Rotenso Windmi Heat Pump (000004k4z6)"
 #     only; look them up in the Windmi user manual's error table (the
 #     GCHV meanings differ from Midea's, e.g. P0 = IPM/IGBT over-current,
 #     P1 = phase loss).
+#   - Defrost: dp 102 DEF (强制除霜) is the forced-defrost COMMAND, not
+#     a status. The controller's own defrost cycles never set it, and
+#     no other DP reports them (mode dp 2 is the user setting; the fault
+#     bitmap has no defrost bit). dp 102 is exposed only as the "Force
+#     Defrost" switch. The "Defrost (suspected)" binary sensor is derived
+#     by DEFROST_DETECTION below (see defrost.py); the real state is
+#     Modbus register 45 (running mode 7 = Defrost), which can replace
+#     the heuristic through the integration's "defrost entity" option
+#     (docs/modbus/README.md).
 #   - timer (dp 16) is a raw DP that comes without a value field
 #     (handled safely by the coordinator). Register discovery exposes
 #     it as a disabled diagnostic sensor.
@@ -253,10 +262,10 @@ SENSOR_TYPES = {
         # 5 HP / 14 kW -> factor 2.8; other Windmi sizes should use
         # rated_kW / rated_HP. In cooling mode the same factor
         # approximates the cooling capacity. During reverse-cycle
-        # defrost (DEF / dp 102 true) no useful heat reaches the water,
-        # so the output drops to 0 for those minutes; DEF is
-        # report-on-change and can fall out of the cloud shadow when
-        # stale, so it defaults to "not defrosting". Refrigerant circuit
+        # defrost (DEFROST: the defrost entity option, else the
+        # DEFROST_DETECTION heuristic) no useful heat reaches the water,
+        # so the output drops to 0 for those minutes; while DEFROST is
+        # unknown it counts as "not defrosting". Refrigerant circuit
         # only: the backup heater (dp 15), DHW tank heater (dp 7) and
         # standby (~20-50 W) are invisible to it.
         "name": "Estimated Heating Output",
@@ -264,8 +273,8 @@ SENSOR_TYPES = {
         "icon": "mdi:radiator",
         "device_class": "power",
         "state_class": "measurement",
-        "formula": "(POWER * 2.8) * (1 - DEF)",
-        "formula_defaults": {"DEF": 0},
+        "formula": "(POWER * 2.8) * (1 - DEFROST)",
+        "formula_defaults": {"DEFROST": 0},
         "precision": 2,
     },
     "power_estimate": {
@@ -278,13 +287,13 @@ SENSOR_TYPES = {
         # and Tout = dp 106 standing in for the table's LWT. Clamped to
         # 1..7 against extrapolation. The fit has no EER terms, so
         # cooling (mode / dp 2 == cool) stays unknown — except during
-        # defrost (DEF / dp 102), when the estimate holds at the
+        # defrost (DEFROST, as above), when the estimate holds at the
         # max-level input, a consistent ~1.15x the nominal PI. heat /
         # DHW / HEATDHW always estimate: the heating setpoint floor is
         # 25 °C, so Tout <= 25 is normal in those modes and is not a
         # cooling signal. COOLDHW, and a mode absent from the poll
-        # (default None), keep the Tout > 25 test. DEF defaults to not
-        # defrosting when that DP has left the cloud shadow. Real COP
+        # (default None), keep the Tout > 25 test. DEFROST defaults to
+        # not defrosting while unknown. Real COP
         # also depends on part load, so expect ~10-15% scatter versus
         # a meter. Same compressor-only blind spots as
         # heating_output_estimate (dp 15 / dp 7 heaters and standby
@@ -297,12 +306,12 @@ SENSOR_TYPES = {
         "formula": (
             "(POWER * 2.8 / max(1.0, min(7.0, "
             "5.99 + 0.141 * T4 - 0.07 * Tout - 0.0016 * T4 * Tout))"
-            " * (1.15 if DEF else 1)) if ("
+            " * (1.15 if DEFROST else 1)) if ("
             "mode in ('heat', 'DHW', 'HEATDHW') or "
             "(mode == 'COOLDHW' and Tout > 25) or "
-            "(mode is None and Tout > 25) or DEF) else None"
+            "(mode is None and Tout > 25) or DEFROST) else None"
         ),
-        "formula_defaults": {"DEF": 0, "mode": None},
+        "formula_defaults": {"DEFROST": 0, "mode": None},
         "precision": 2,
     },
     "WP_speed": {
@@ -352,13 +361,30 @@ BINARY_SENSOR_TYPES = {
         "device_class": "problem",
         "conversion": "value != 0",
     },
-    "DEF": {
-        "dp_id": 102,
-        "code": "DEF",
-        "name": "Defrosting",
-        "device_class": "cold",
-        "conversion": _ON_VALUES,
-    },
+    # dp 102 DEF is no longer a "Defrosting" binary sensor: it is the
+    # forced-defrost command (see the header). Its state is shown by the
+    # "Force Defrost" switch; the defrost state is "Defrost (suspected)",
+    # which takes over the old entity (DEFROST_DETECTION["replaces"]).
+}
+
+# ====================================================
+# DEFROST DETECTION (defrost.py)
+# ====================================================
+# The unit reports no defrost state over Tuya. A reverse-cycle defrost
+# pulls heat from the water loop, so plate-HX outlet water (Tout, dp 106)
+# drops below inlet (Tin, dp 101) while the unit is in a heating mode,
+# and the outdoor coil (T3, dp 115) and the T4 probe (dp 105, mounted at
+# the outdoor unit) warm up. Thresholds are the defaults in defrost.py.
+# A binary_sensor chosen as the integration's "defrost entity" (e.g. a
+# Modbus register 45 sensor) overrides this heuristic.
+DEFROST_DETECTION = {
+    "mode": "mode",
+    "heating_modes": ["heat", "HEATDHW", "DHW"],
+    "supply": "Tout",
+    "return": "Tin",
+    "confirm": ["T3", "T4"],
+    # Old binary sensor key whose registry entry moves to the new sensor.
+    "replaces": "DEF",
 }
 
 # ====================================================
@@ -398,9 +424,9 @@ SWITCH_TYPES = {
         "conversion": _ON_VALUES,
     },
     "force_defrost": {
-        # Same DP as the "Defrosting" binary sensor; the Tuya schema
-        # marks it rw (强制除霜 = forced defrost), so it can also be
-        # triggered manually.
+        # dp 102, 强制除霜 = forced defrost (rw): requests a defrost and
+        # shows the request flag. It does not report the controller's
+        # own defrost cycles (see "Defrost (suspected)").
         "dp_id": 102,
         "code": "DEF",
         "name": "Force Defrost",

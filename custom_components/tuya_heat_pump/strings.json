@@ -86,7 +86,18 @@
                 "description": "What would you like to configure?",
                 "menu_options": {
                     "connection_options": "Connection Settings",
-                    "climate_options": "Climate (Thermostat) Card"
+                    "climate_options": "Climate (Thermostat) Card",
+                    "defrost_options": "Defrost Signal (optional)"
+                }
+            },
+            "defrost_options": {
+                "title": "Optional: Defrost Signal",
+                "description": "Pick a binary sensor that reports when the heat pump is defrosting, for example a Modbus sensor on the unit's running-mode register (Rotenso Windmi: register 45, value 7 = Defrost; see docs/modbus/README.md). When set, it replaces the built-in defrost estimate for the Defrost sensor and for the heating-output and power estimates. Leave empty to use the built-in estimate (where the model has one).",
+                "data": {
+                    "defrost_entity": "Defrost entity"
+                },
+                "data_description": {
+                    "defrost_entity": "Any binary_sensor: on = defrosting, off = not defrosting. Clear it to go back to the built-in estimate."
                 }
             },
             "cloud_options": {

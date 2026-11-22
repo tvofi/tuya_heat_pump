@@ -75,6 +75,7 @@ async def async_load_model_mapping(hass: HomeAssistant, model_id: str = None) ->
                 "selects": getattr(model_module, "SELECT_TYPES", {}),
                 "texts": getattr(model_module, "TEXT_TYPES", {}),
                 "model_id": model_id,
+                "defrost_detection": getattr(model_module, "DEFROST_DETECTION", None),
                 "model_name": getattr(model_module, "MODEL_NAME", f"Model {model_id}")
             }
             
@@ -155,6 +156,7 @@ def load_model_mapping(model_id: str = None) -> Dict[str, Any]:
                 "selects": getattr(module, "SELECT_TYPES", {}),
                 "texts": getattr(module, "TEXT_TYPES", {}),
                 "model_id": model_id,
+                "defrost_detection": getattr(module, "DEFROST_DETECTION", None),
                 "model_name": getattr(module, "MODEL_NAME", f"Model {model_id}")
             }
             
@@ -174,6 +176,7 @@ def load_model_mapping(model_id: str = None) -> Dict[str, Any]:
                     "selects": getattr(module, "SELECT_TYPES", {}),
                     "texts": getattr(module, "TEXT_TYPES", {}),
                     "model_id": model_id,
+                    "defrost_detection": getattr(module, "DEFROST_DETECTION", None),
                     "model_name": getattr(module, "MODEL_NAME", f"Model {model_id}")
                 }
                 

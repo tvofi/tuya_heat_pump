@@ -7,6 +7,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
 from .conversion import Conversion
@@ -59,11 +60,101 @@ async def async_setup_entry(
         else:
             _LOGGER.warning("Binary sensor %s not found in device data, skipping", sensor_code)
     
+    if coordinator.defrost_supported:
+        _migrate_defrost_unique_id(hass, coordinator, binary_sensor_configs)
+        binary_sensors.append(TuyaHeatpumpDefrostSensor(coordinator))
+        _LOGGER.info("Adding defrost binary sensor (source: %s)", coordinator.defrost_source)
+
     async_add_entities(binary_sensors)
     watch_pending_raw_entities(
         config_entry, coordinator, async_add_entities,
         pending, TuyaHeatpumpBinarySensor, _LOGGER,
     )
+
+
+def _device_slug(coordinator) -> str:
+    return coordinator.device_name.lower().replace(" ", "_").replace("-", "_")
+
+
+DEFROST_UNIQUE_KEY = "defrost"
+
+
+def _migrate_defrost_unique_id(hass, coordinator, binary_sensor_configs: dict) -> None:
+    """Hand a model's retired defrost binary sensor over to this one.
+
+    A model file whose old "Defrosting" entity read the wrong DP drops it
+    and lists its key in DEFROST_DETECTION["replaces"] (Rotenso Windmi:
+    "DEF", the forced-defrost command flag). The registry entry is moved
+    to the new unique id, so the entity id, its history and automations
+    that use it now follow the real defrost state instead of going
+    orphaned. Skipped when the old key is still mapped or the new entity
+    already exists."""
+    detection = coordinator.model_mapping.get("defrost_detection") or {}
+    old_key = detection.get("replaces")
+    if not old_key or old_key in binary_sensor_configs:
+        return
+    try:
+        registry = er.async_get(hass)
+    except Exception as err:  # no registry (offline tools)
+        _LOGGER.debug("Entity registry unavailable: %s", err)
+        return
+    slug = _device_slug(coordinator)
+    old_entity = registry.async_get_entity_id("binary_sensor", DOMAIN, f"{slug}_{old_key}")
+    if old_entity is None:
+        return
+    if registry.async_get_entity_id("binary_sensor", DOMAIN, f"{slug}_{DEFROST_UNIQUE_KEY}"):
+        return
+    registry.async_update_entity(old_entity, new_unique_id=f"{slug}_{DEFROST_UNIQUE_KEY}")
+    _LOGGER.info("Migrated %s to the defrost state sensor", old_entity)
+
+
+class TuyaHeatpumpDefrostSensor(BinarySensorEntity):
+    """Whether the unit is defrosting.
+
+    Source: the binary_sensor chosen in the options (e.g. a Modbus
+    running-mode sensor), else the model's heuristic (defrost.py). The
+    heuristic infers the state, hence the name "Defrost (suspected)"."""
+
+    _attr_has_entity_name = True
+    _attr_device_class = "cold"
+    _attr_icon = "mdi:snowflake-melt"
+
+    def __init__(self, coordinator: TuyaScaleDataUpdateCoordinator) -> None:
+        self.coordinator = coordinator
+        self._attr_unique_id = f"{_device_slug(coordinator)}_{DEFROST_UNIQUE_KEY}"
+        self._attr_name = (
+            "Defrost" if coordinator.defrost_source == "entity" else "Defrost (suspected)"
+        )
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def device_info(self):
+        return self.coordinator.device_info
+
+    @property
+    def is_on(self) -> bool | None:
+        return self.coordinator.defrost_active
+
+    @property
+    def available(self) -> bool:
+        if self.coordinator.defrost_source == "entity":
+            return self.coordinator.defrost_active is not None
+        return bool(self.coordinator.last_update_success and self.coordinator.data is not None)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attrs: dict[str, Any] = {"source": self.coordinator.defrost_source}
+        if self.coordinator.defrost_source == "entity":
+            attrs["source_entity"] = self.coordinator.defrost_entity_id
+        else:
+            attrs["confirmed"] = self.coordinator.defrost_confirmed
+        return attrs
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
 
 
 class TuyaHeatpumpOnlineSensor(BinarySensorEntity):

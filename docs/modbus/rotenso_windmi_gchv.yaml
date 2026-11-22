@@ -1124,6 +1124,11 @@ template:
     availability: '{{ is_number(states(''sensor.hp_gchv_r4127_101fh'')) }}'
     state: '{{ (states(''sensor.hp_gchv_r4127_101fh'') | int(0)) | bitwise_and(2) > 0 }}'
     device_class: problem
+  - name: HP Defrost active
+    unique_id: hp_defrost_active
+    availability: '{{ is_number(states(''sensor.hp_gchv_r45_002dh'')) }}'
+    state: '{{ (states(''sensor.hp_gchv_r45_002dh'') | int(0)) == 7 }}'
+    device_class: cold
   - name: HP Alarm
     unique_id: hp_alarm
     device_class: problem

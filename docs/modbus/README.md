@@ -18,7 +18,7 @@ The packages in this folder use only Home Assistant's built-in `modbus` and
 
 | Unit | Manufacturer / controller | Package | Status |
 |---|---|---|---|
-| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | manual's Modbus table rows 1–18 and 20–159 transcribed (221 entities: unit mode, occupancy and interface type, every writable setpoint, curve, DHW/anti-legionella schedule, backup heater type, I/O configuration, decoded alarms); rows 84–106, 137–138, 150–158 still to add |
+| **Rotenso Windmi** monoblock (WIM40X1 … WIM160X3, incl. the 14 kW WIM140X3) and other **Giwee / GCHV** monoblocks | GCHV (Guangdong Carrier HVAC, formerly Chigo), "GCHV" Modbus table in the installation manual pp. 122–123 | `rotenso_windmi_gchv.yaml` | manual's Modbus table rows 1–18 and 20–159 transcribed (222 entities: unit mode, occupancy and interface type, every writable setpoint, curve, DHW/anti-legionella schedule, backup heater type, I/O configuration, decoded alarms); rows 84–106, 137–138, 150–158 still to add |
 | Midea M-Thermal OEMs: **Kaisai** KHC/KMK, **Airwell** Wellea, **Ferroli** Omnia, **Inventor** Matrix, **Kaysun** Aquantia, **YORK**, Midea Arctic/Nature | Midea, wired controller H1/H2 | `midea_mthermal_r32.yaml`, `midea_mthermal_r290.yaml` | full community map, every FOR SERVICEMAN parameter writable |
 
 **Do not use the Midea packages on a Rotenso Windmi.** The Windmi's register
@@ -51,7 +51,7 @@ Heating, Ventilation & Air Conditioning; its ATW monoblock is sold as
   with `homeassistant: packages: !include_dir_named packages`), edit the
   `modbus:` block for your adapter, restart.
 
-### What the Windmi package contains (221 entities)
+### What the Windmi package contains (222 entities)
 
 Transcribed from the manual's section 16.5 Modbus table (rows 1–18 and
 20–159), cross-checked with the owner gist:
@@ -80,6 +80,9 @@ Transcribed from the manual's section 16.5 Modbus table (rows 1–18 and
   reasons 1 and 2 (decoded), P6/IPM protection reason (decoded), the four
   **alarm bitmaps decoded to text** (sensor fails, protections with the
   E/P/H code from the manual) and one combined *Alarm* problem sensor.
+- **Defrost active** (`binary_sensor.hp_defrost_active`): on while the
+  running mode (register 45) is 7 = Defrost. This is the unit's real
+  defrost state; see the next section.
 - **Writable setpoints** (numbers, 0.5 °C steps): water control point;
   occupied/unoccupied/economic heating and cooling water setpoints and
   offsets; occupied/unoccupied/economic heating and cooling air setpoints
@@ -107,6 +110,33 @@ Transcribed from the manual's section 16.5 Modbus table (rows 1–18 and
 Not yet covered: rows 84–106, 137–138 and 150–158 — those manual pages
 were not available. Rows 3, 12, 15, 16 and 19 do not exist in the manual's
 numbering.
+
+### Using the Modbus defrost state in the Tuya integration
+
+The Windmi's Tuya data has no defrost status: dp 102 is only the
+forced-defrost command. The Tuya integration therefore estimates defrost
+from the water temperatures ("Defrost (suspected)"). With this package
+installed you can replace that estimate with the real state:
+
+1. Install `rotenso_windmi_gchv.yaml` as above. Check that
+   `sensor.hp_running_mode` shows *Defrost* during a defrost cycle.
+2. In *Settings > Devices & services > Tuya Heat Pump > Configure*, choose
+   **Defrost Signal (optional)** and pick `binary_sensor.hp_defrost_active`.
+3. The integration reloads. Its defrost sensor is now named "Defrost" and
+   follows the Modbus entity, and Estimated Heating Output and Estimated
+   Power Draw use it as well. Clear the field to go back to the estimate.
+
+Any other `binary_sensor` works too: on = defrosting. Without this
+package, a template over your own register-45 sensor does the same job:
+
+```yaml
+template:
+  - binary_sensor:
+      - name: HP Defrost active
+        device_class: cold
+        availability: "{{ is_number(states('sensor.hp_gchv_r45_002dh')) }}"
+        state: "{{ states('sensor.hp_gchv_r45_002dh') | int(0) == 7 }}"
+```
 
 ### Completing the table
 

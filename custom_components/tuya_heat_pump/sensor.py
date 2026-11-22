@@ -20,6 +20,9 @@ from .entity_helpers import apply_common_entity_attrs, common_extra_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
+# Formula name for the defrost state (see _converted_value_of).
+DEFROST_FORMULA_INPUT = "DEFROST"
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -128,42 +131,16 @@ class TuyaHeatpumpSensor(SensorEntity):
         return self.coordinator.device_info
 
     def _converted_value_of(self, code: str):
-        """Converted (scaled) value of another plain sensor in this model,
-        used by formula sensors. None when unknown/unavailable."""
-        if not self.coordinator.data:
-            return None
-        sensor_configs = self.coordinator.model_mapping.get("sensors", {})
-        config = sensor_configs.get(code) or {}
-        lookup = config.get("code", code)
-        if lookup not in self.coordinator.data:
-            return None
-        raw_value = self.coordinator.data[lookup].get('value')
-        if raw_value is None:
-            return None
-        # Boolean DPs (e.g. DEF / dp 102 defrosting) are usable formula
-        # inputs as 0/1. Strings pass through (enum keys such as mode).
-        if isinstance(raw_value, bool):
-            raw_value = int(raw_value)
-        elif not isinstance(raw_value, (int, float, str)):
-            return None
-        try:
-            result = Conversion(config.get('conversion', 'value')).convert(raw_value)
-        except Exception:
-            return None
-        # Enum keys (operation mode) are formula inputs. Arithmetic
-        # formulas still only accept numbers; a string makes eval fail
-        # closed and the sensor reads unknown.
-        if isinstance(result, str):
-            return result
-        if not isinstance(result, (int, float)):
-            return None
-        # A calibration on an input sensor must carry into derived formula
-        # values (e.g. water_delta_t = Tout - Tin), otherwise the derived
-        # sensor disagrees with the calibrated inputs it is computed from.
-        offset = self.coordinator.get_sensor_offset(code)
-        if offset:
-            result = round(result + offset, 6)
-        return result
+        """Converted (scaled, calibrated) value of another input, used by
+        formula sensors. None when unknown/unavailable.
+
+        ``DEFROST`` is reserved: 1/0 from the coordinator's defrost state
+        (the option entity, else the model's heuristic; see defrost.py),
+        None while unknown."""
+        if code == DEFROST_FORMULA_INPUT:
+            state = self.coordinator.defrost_active
+            return None if state is None else int(state)
+        return self.coordinator.converted_value(code)
 
     def _evaluate_formula(self) -> float | None:
         """Evaluate config["formula"] with other sensor codes as names.
@@ -182,10 +159,10 @@ class TuyaHeatpumpSensor(SensorEntity):
                      if n not in ("abs", "min", "max", "round", "and", "or", "not",
                                   "if", "else", "None", "True", "False", "is", "in")]
         namespace = {}
-        # A config may give a fallback for an input whose DP is missing
-        # from the poll data (report-on-change DPs fall out of the cloud
-        # shadow when stale — e.g. DEF/dp 102 in summer: default 0,
-        # "not defrosting", rather than unknown the whole season).
+        # A config may give a fallback for an input that is unknown:
+        # report-on-change DPs fall out of the cloud shadow when stale,
+        # and DEFROST is unknown until the heuristic has its inputs
+        # (default 0, "not defrosting", rather than an unknown estimate).
         defaults = self._config.get("formula_defaults", {})
         for name in names:
             value = self._converted_value_of(name)

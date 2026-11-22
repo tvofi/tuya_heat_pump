@@ -3,8 +3,9 @@ import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import TuyaScaleDataUpdateCoordinator
@@ -113,6 +114,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
+    if coordinator.defrost_entity_id:
+        # The defrost entity chosen in the options changes on its own
+        # schedule: re-render the defrost sensor and the estimates that
+        # read DEFROST when it does, not only on the next poll.
+        @callback
+        def _defrost_entity_changed(_event) -> None:
+            coordinator.async_update_listeners()
+
+        entry.async_on_unload(
+            async_track_state_change_event(
+                hass, [coordinator.defrost_entity_id], _defrost_entity_changed,
+            )
+        )
     # A settings change saved during setup, before the listener existed,
     # would otherwise only apply on the next restart.
     if config_fingerprint(entry) != coordinator.applied_config:

@@ -310,6 +310,14 @@ RO_BITS = [
     (4127, 1, "High pressure switch", "problem"),
 ]
 
+# Read-only "register equals value" flags: (addr, value, name, device_class).
+# "Defrost active" (running mode 7) is the unit's real defrost state: pick
+# it as the Tuya Heat Pump integration's "defrost entity" option to replace
+# that integration's defrost heuristic (see docs/modbus/README.md).
+RO_EQUALS = [
+    (45, 7, "Defrost active", "cold"),
+]
+
 # Bitmask -> text (sum of reasons): (addr, name, {bitvalue: label})
 MASK_TEXT = [
     (4121, "Compressor frequency limitation reason 1", {
@@ -475,6 +483,14 @@ def build() -> dict:
     for addr, bit, name, dc in RO_BITS:
         d = {"name": nice(name), "unique_id": slug(nice(name)), "availability": avail(addr),
              "state": f"{{{{ {raw_int(addr)} | bitwise_and({1 << bit}) > 0 }}}}"}
+        if dc:
+            d["device_class"] = dc
+        t_binary.append(d)
+
+    # value flags
+    for addr, value, name, dc in RO_EQUALS:
+        d = {"name": nice(name), "unique_id": slug(nice(name)), "availability": avail(addr),
+             "state": f"{{{{ {raw_int(addr)} == {value} }}}}"}
         if dc:
             d["device_class"] = dc
         t_binary.append(d)

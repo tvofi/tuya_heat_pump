@@ -29,6 +29,7 @@ from .const import (
     CONF_SHARING_TOKEN_INFO,
     CONF_AUTO_DISCOVERY,
     DEFAULT_AUTO_DISCOVERY,
+    CONF_DEFROST_ENTITY,
     CONF_CLIMATE_ENABLED,
     CONF_CLIMATE_POWER_CODE,
     CONF_CLIMATE_CURRENT_TEMP_CODE,
@@ -510,7 +511,35 @@ class TuyaHeatpumpOptionsFlow(config_entries.OptionsFlow):
         connection details could wipe out already-saved climate options)."""
         return self.async_show_menu(
             step_id="init",
-            menu_options=["connection_options", "climate_options"],
+            menu_options=["connection_options", "climate_options", "defrost_options"],
+        )
+
+    async def async_step_defrost_options(self, user_input=None):
+        """Optional defrost entity: a binary_sensor reporting the unit's
+        real defrost state (e.g. a Modbus sensor on its running-mode
+        register). When set it replaces the model's defrost heuristic for
+        the Defrost sensor and the estimates; cleared, the heuristic is
+        back. Other options are kept."""
+        if user_input is not None:
+            data = {**self._config_entry.options}
+            data.pop(CONF_DEFROST_ENTITY, None)
+            if user_input.get(CONF_DEFROST_ENTITY):
+                data[CONF_DEFROST_ENTITY] = user_input[CONF_DEFROST_ENTITY]
+            return self.async_create_entry(title="", data=data)
+
+        current = self._config_entry.options.get(CONF_DEFROST_ENTITY)
+        return self.async_show_form(
+            step_id="defrost_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_DEFROST_ENTITY,
+                        description={"suggested_value": current} if current else None,
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="binary_sensor")
+                    ),
+                }
+            ),
         )
 
     async def async_step_connection_options(self, user_input=None):
