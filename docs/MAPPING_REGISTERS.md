@@ -82,6 +82,7 @@ generated entry into the matching dict, then fix:
 | `options` | selects: `{tuya_key: "Label"}` |
 | `entity_category`, `enabled_default` | `"config"`/`"diagnostic"`; create disabled |
 | `formula`, `precision` | derived sensor from other sensors, e.g. `"Tout - Tin"` |
+| `DEFROST_DETECTION` (module level) | defrost estimate for a unit with no defrost DP: `{"heating_modes": [...], "supply": "Tout", "return": "Tin", "confirm": ["T3", "T4"]}` (see `defrost.py`); formulas read the result as `DEFROST` (1/0), and the integration's *defrost entity* option replaces it. A dp named 除霜/强制除霜 that is writable is usually a forced-defrost **command**, not a status: map it as a switch |
 
 Restart Home Assistant (or reload the integration). Because the key is the
 same as the discovered entity's key, the entity keeps its id and history and

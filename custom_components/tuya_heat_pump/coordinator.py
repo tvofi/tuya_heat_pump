@@ -48,11 +48,18 @@ from .const import (
     CONF_CACHED_MODEL_SCHEMA,
     CONF_AUTO_DISCOVERY,
     DEFAULT_AUTO_DISCOVERY,
+    CONF_DEFROST_ENTITY,
 )
 import tinytuya
 from .model_loader import load_model_mapping, async_load_model_mapping
 from .raw_codec import encode_raw_field
 from .conversion import Conversion
+from .defrost import (
+    SOURCE_ENTITY,
+    SOURCE_HEURISTIC,
+    DefrostDetector,
+    external_state,
+)
 from .config_fingerprint import CACHE_ONLY_KEYS, config_fingerprint
 from .discovery import (
     ENTITY_CATEGORIES,
@@ -136,6 +143,13 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
                 config_entry.data.get(CONF_AUTO_DISCOVERY, DEFAULT_AUTO_DISCOVERY),
             )
         )
+        # Defrost state (defrost.py). An entity chosen in the options
+        # overrides the model's heuristic; the detector is built lazily
+        # from model_mapping["defrost_detection"] once the model is known.
+        self.defrost_entity_id: str | None = (
+            config_entry.options.get(CONF_DEFROST_ENTITY) or None
+        )
+        self._defrost_detector: DefrostDetector | None = None
         # --- MQTT (tuya_sharing) — tamamen opsiyonel, bkz. sharing_mqtt.py.
         # CONF_USER_CODE config_entry.data'da yoksa (mevcut tüm entry'ler
         # için durum bu) aşağıdakiler hiç kullanılmaz, davranış hiç
@@ -1747,6 +1761,113 @@ class TuyaScaleDataUpdateCoordinator(DataUpdateCoordinator):
             "code": code,
             "dp_id": dp_id,
         }
+
+    # ============================================================================
+    # DERIVED VALUES AND DEFROST
+    # ============================================================================
+
+    def converted_value(self, code: str):
+        """Converted (scaled, calibrated) value of a model sensor, or the
+        raw value of any other DP code; None when unknown.
+
+        Formula sensors and the defrost heuristic read their inputs here,
+        so a calibration offset on an input carries into what is derived
+        from it (water_delta_t = Tout - Tin)."""
+        if not self.data:
+            return None
+        sensor_configs = (self.model_mapping or {}).get("sensors", {})
+        config = sensor_configs.get(code) or {}
+        lookup = config.get("code", code)
+        if lookup not in self.data:
+            return None
+        raw_value = (self.data[lookup] or {}).get("value")
+        if raw_value is None:
+            return None
+        # Boolean DPs are usable formula inputs as 0/1. Strings pass
+        # through (enum keys such as mode).
+        if isinstance(raw_value, bool):
+            raw_value = int(raw_value)
+        elif not isinstance(raw_value, (int, float, str)):
+            return None
+        try:
+            result = Conversion(config.get("conversion", "value")).convert(raw_value)
+        except Exception:
+            return None
+        # Enum keys (operation mode) are formula inputs. Arithmetic
+        # formulas still only accept numbers; a string makes eval fail
+        # closed and the sensor reads unknown.
+        if isinstance(result, str):
+            return result
+        if isinstance(result, bool) or not isinstance(result, (int, float)):
+            return None
+        offset = self.get_sensor_offset(code)
+        if offset:
+            result = round(result + offset, 6)
+        return result
+
+    @property
+    def defrost_supported(self) -> bool:
+        """True when there is any defrost source: an option entity, or a
+        DEFROST_DETECTION dict in the model file."""
+        return bool(
+            getattr(self, "defrost_entity_id", None)
+            or (getattr(self, "model_mapping", None) or {}).get("defrost_detection")
+        )
+
+    @property
+    def defrost_source(self) -> str | None:
+        if getattr(self, "defrost_entity_id", None):
+            return SOURCE_ENTITY
+        if (getattr(self, "model_mapping", None) or {}).get("defrost_detection"):
+            return SOURCE_HEURISTIC
+        return None
+
+    def _defrost_detector_for_model(self) -> DefrostDetector | None:
+        config = (getattr(self, "model_mapping", None) or {}).get("defrost_detection")
+        if not config:
+            return None
+        detector = getattr(self, "_defrost_detector", None)
+        if detector is None:
+            detector = DefrostDetector(config)
+            self._defrost_detector = detector
+        return detector
+
+    def _update_defrost(self, now: float | None = None) -> None:
+        """Feed the heuristic one coordinator update (no-op without one)."""
+        if getattr(self, "defrost_entity_id", None):
+            return
+        detector = self._defrost_detector_for_model()
+        if detector is None:
+            return
+        detector.update(self.converted_value, time.monotonic() if now is None else now)
+
+    @property
+    def defrost_active(self) -> bool | None:
+        """Whether the unit is defrosting: the option entity's state when
+        one is set, the heuristic otherwise; None when unknown."""
+        entity_id = getattr(self, "defrost_entity_id", None)
+        if entity_id:
+            hass = getattr(self, "hass", None)
+            states = getattr(hass, "states", None)
+            return external_state(states.get(entity_id) if states else None)
+        detector = getattr(self, "_defrost_detector", None)
+        return detector.active if detector is not None else None
+
+    @property
+    def defrost_confirmed(self) -> bool | None:
+        detector = getattr(self, "_defrost_detector", None)
+        if getattr(self, "defrost_entity_id", None) or detector is None:
+            return None
+        return detector.confirmed
+
+    def async_update_listeners(self) -> None:
+        """Advance the defrost heuristic on every data change, before the
+        entities render, so they all see the same state."""
+        try:
+            self._update_defrost()
+        except Exception as err:  # never let the heuristic break updates
+            _LOGGER.debug("Defrost heuristic failed: %s", err)
+        super().async_update_listeners()
 
     def get_sensor_offset(self, sensor_code: str) -> float | None:
         """User calibration offset for a temperature sensor, or None."""

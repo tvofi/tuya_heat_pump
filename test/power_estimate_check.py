@@ -13,6 +13,10 @@ The gate is the operation mode (dp 2): heat / DHW / HEATDHW always
 estimate; cool stays unknown unless defrosting; COOLDHW and a mode
 missing from the poll keep the Tout > 25 fallback.
 
+Defrost is the coordinator's defrost state (formula input DEFROST: the
+defrost entity option, else the model's heuristic, see defrost.py), not
+dp 102 DEF, which is only the forced-defrost command flag.
+
 Usage:
     python3 test/power_estimate_check.py [path/to/custom_components/tuya_heat_pump]
 """
@@ -35,7 +39,15 @@ def _load_model(integration_dir: Path):
     return module
 
 
-def _reading(sensor_mod, coord_cls, model, data, code):
+class _Detector:
+    """Stands in for the defrost heuristic with a fixed state."""
+
+    def __init__(self, active):
+        self.active = active
+        self.confirmed = None
+
+
+def _reading(sensor_mod, coord_cls, model, data, code, defrost=None):
     coordinator = live.make_coord(coord_cls, data=data)
     coordinator.model_mapping = {
         "sensors": model.SENSOR_TYPES,
@@ -43,6 +55,7 @@ def _reading(sensor_mod, coord_cls, model, data, code):
         "selects": model.SELECT_TYPES,
     }
     coordinator._sensor_offsets = {}
+    coordinator._defrost_detector = _Detector(defrost)
     entity = sensor_mod.TuyaHeatpumpSensor(
         coordinator, code, model.SENSOR_TYPES[code]
     )
@@ -65,12 +78,12 @@ def check_all(sensor_mod, coord_cls, model):
     def record(name, condition, detail=""):
         results.append((name, bool(condition), detail))
 
-    def power(data):
-        return _reading(sensor_mod, coord_cls, model, data, "power_estimate")
+    def power(data, defrost=None):
+        return _reading(sensor_mod, coord_cls, model, data, "power_estimate", defrost)
 
-    def heat(data):
+    def heat(data, defrost=None):
         return _reading(
-            sensor_mod, coord_cls, model, data, "heating_output_estimate"
+            sensor_mod, coord_cls, model, data, "heating_output_estimate", defrost
         )
 
     # The reported bug: heating, leaving water at or below 25 C.
@@ -94,14 +107,23 @@ def check_all(sensor_mod, coord_cls, model):
     )
 
     # Defrost while heating and cold: max-level input, output dropped to 0.
-    available, value = power(_props(**{**_BASE, "DEF": True}))
+    available, value = power(_props(**_BASE), defrost=True)
     record(
         "heat + defrost → 1.15x draw",
         available is True and value == 3.10,
         f"value={value}",
     )
-    _, heating = heat(_props(**{**_BASE, "DEF": True}))
+    _, heating = heat(_props(**_BASE), defrost=True)
     record("heating output drops to 0 during defrost", heating == 0.0, str(heating))
+    # Null control: the forced-defrost flag (dp 102) is a command, not the
+    # defrost state, and must not move either estimate.
+    _, value = power(_props(**{**_BASE, "DEF": True}), defrost=False)
+    _, heating = heat(_props(**{**_BASE, "DEF": True}), defrost=False)
+    record(
+        "forced-defrost flag alone leaves both estimates unchanged",
+        value == 2.70 and heating == 14.0,
+        f"power={value} heating={heating}",
+    )
 
     # DHW and combined heating follow the same COP model.
     for mode in ("DHW", "HEATDHW"):
@@ -120,7 +142,7 @@ def check_all(sensor_mod, coord_cls, model):
         f"available={available} value={value}",
     )
     # Tout 12 C → COP 6.0026, 14 kW / 6.0026 × 1.15 = 2.68 kW.
-    available, value = power(_props(**{**_BASE, "mode": "cool", "Tout": 12, "DEF": 1}))
+    available, value = power(_props(**{**_BASE, "mode": "cool", "Tout": 12}), defrost=True)
     record(
         "cool + defrost → numeric",
         available is True and value == 2.68,
@@ -143,7 +165,7 @@ def check_all(sensor_mod, coord_cls, model):
     available, value = power({**stale, "Tout": {"value": 20}})
     record("mode missing + Tout 20 C → unknown", value is None, f"value={value}")
     # Tout 20 C → COP 5.353, 14 kW / 5.353 × 1.15 = 3.01 kW.
-    available, value = power({**stale, "Tout": {"value": 20}, "DEF": {"value": True}})
+    available, value = power({**stale, "Tout": {"value": 20}}, defrost=True)
     record("mode missing + defrost → numeric", value == 3.01, f"value={value}")
 
     # A required temperature still blanks the estimate. Heating output
@@ -155,11 +177,15 @@ def check_all(sensor_mod, coord_cls, model):
     record("T4 missing → power unknown", value is None, f"value={value}")
     record("T4 missing → heating output still numeric", heating == 14.0, str(heating))
 
-    # DEF out of season: default 0, same as "not defrosting".
-    no_def = _props(**_BASE)
-    del no_def["DEF"]
-    _, value = power(no_def)
-    record("DEF missing defaults to not defrosting", value == 2.70, f"value={value}")
+    # Defrost state unknown (heuristic inputs missing): default 0, same
+    # as "not defrosting".
+    _, value = power(_props(**_BASE), defrost=None)
+    _, heating = heat(_props(**_BASE), defrost=None)
+    record(
+        "defrost unknown defaults to not defrosting",
+        value == 2.70 and heating == 14.0,
+        f"power={value} heating={heating}",
+    )
 
     # Unrelated formula still subtracts two temperatures.
     delta = sensor_mod.TuyaHeatpumpSensor(

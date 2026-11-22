@@ -155,3 +155,9 @@ DEFAULT_CLIMATE_TOLERANCE = 0.3
 DEFAULT_CLIMATE_MIN_CYCLE_MINUTES = 5
 DEFAULT_CLIMATE_MIN_TEMP = 5
 DEFAULT_CLIMATE_MAX_TEMP = 30
+
+# Optional: a binary_sensor (any integration, e.g. a Modbus sensor on the
+# unit's running-mode register) that reports the real defrost state. When
+# set it replaces the model's defrost heuristic (defrost.py) for the
+# Defrost binary sensor and for every formula that reads DEFROST.
+CONF_DEFROST_ENTITY = "defrost_entity"

@@ -84,7 +84,8 @@
                 "description": "Neyi yapılandırmak istiyorsunuz?",
                 "menu_options": {
                     "connection_options": "Bağlantı Ayarları",
-                    "climate_options": "Termostat (Climate) Kartı"
+                    "climate_options": "Termostat (Climate) Kartı",
+                    "defrost_options": "Defrost Sinyali (isteğe bağlı)"
                 },
                 "title": "Tuya Isı Pompası Yapılandırması"
             },
@@ -134,6 +135,16 @@
                 },
                 "description": "Yukarıda bir mod-seçim alanı seçtiniz. Bu alanın kendi değerlerinden hangisinin Isıtma, hangisinin Soğutma anlamına geldiğini onaylayın — bariz bir eşleşme varsa önceden seçili geliyor, ama cihazınızla karşılaştırıp kontrol edin.",
                 "title": "Termostat Kartı: Isıtma/Soğutma Değerleri"
+            },
+            "defrost_options": {
+                "title": "İsteğe bağlı: Defrost Sinyali",
+                "description": "Isı pompasının defrost yaptığını bildiren bir binary sensor seçin, örneğin cihazın çalışma modu register'ını okuyan bir Modbus sensörü (Rotenso Windmi: register 45, değer 7 = Defrost; bkz. docs/modbus/README.md). Seçildiğinde Defrost sensöründe ve ısıtma çıkışı / güç tahminlerinde yerleşik defrost tahmininin yerini alır. Yerleşik tahmini kullanmak için boş bırakın (modelde varsa).",
+                "data": {
+                    "defrost_entity": "Defrost varlığı"
+                },
+                "data_description": {
+                    "defrost_entity": "Herhangi bir binary_sensor: açık = defrost yapıyor, kapalı = yapmıyor. Yerleşik tahmine dönmek için temizleyin."
+                }
             }
         }
     },
